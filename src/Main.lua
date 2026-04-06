@@ -143,7 +143,13 @@ end
 function Library:_trackThread(t)
     table.insert(self._threads, t); return t
 end
-
+-- Add this to your Library table if it's missing or named differently
+function Library:Notification(title, content, icon)
+    -- This handles the sliding toast notifications you saw in the pill
+    local toast = NotificationService.create(title, content, icon)
+    toast.Parent = Library._gui
+    return toast
+end
 -- ─────────────────────────────────────────────────────────────────
 -- 3. LOGGER
 -- ─────────────────────────────────────────────────────────────────
@@ -441,6 +447,72 @@ end
 function Library:AutoSave()
     local filename = string.format("claudeui_place_%d.json", game.PlaceId)
     StorageProvider.write(filename, self._config)
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- 5.5 NOTIFICATION SERVICE
+-- ─────────────────────────────────────────────────────────────────
+local NotificationService = {}
+
+function NotificationService.create(title, content, iconName)
+    local container = Instance.new("Frame")
+    container.Name = "CUI_Notification"
+    container.Size = UDim2.new(0, 280, 0, 60)
+    container.BackgroundColor3 = C.RAIL
+    container.BorderSizePixel = 0
+    
+    -- Positioning (Bottom Right)
+    container.Position = UDim2.new(1, -300, 1, -80)
+    
+    -- Rounded Corners & Stroke
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = C.RADIUS
+    corner.Parent = container
+    
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = C.BORDER
+    stroke.Thickness = 1
+    stroke.Parent = container
+
+    -- Accent Bar (The Orange strip on the side)
+    local accent = Instance.new("Frame")
+    accent.Size = UDim2.new(0, 4, 1, 0)
+    accent.BackgroundColor3 = C.ACCENT
+    accent.BorderSizePixel = 0
+    accent.Parent = container
+    Instance.new("UICorner", accent).CornerRadius = C.RADIUS
+
+    -- Title text
+    local tLabel = Instance.new("TextLabel")
+    tLabel.Text = string.upper(title or "SYSTEM")
+    tLabel.Font = Enum.Font.GothamBold
+    tLabel.TextSize = 12
+    tLabel.TextColor3 = C.ACCENT
+    tLabel.Position = UDim2.new(0, 15, 0, 10)
+    tLabel.Size = UDim2.new(1, -20, 0, 15)
+    tLabel.BackgroundTransparency = 1
+    tLabel.TextXAlignment = Enum.TextXAlignment.Left
+    tLabel.Parent = container
+
+    -- Content text
+    local cLabel = Instance.new("TextLabel")
+    cLabel.Text = content or ""
+    cLabel.Font = Enum.Font.Gotham
+    cLabel.TextSize = 13
+    cLabel.TextColor3 = C.TEXT
+    cLabel.Position = UDim2.new(0, 15, 0, 28)
+    cLabel.Size = UDim2.new(1, -20, 0, 20)
+    cLabel.BackgroundTransparency = 1
+    cLabel.TextXAlignment = Enum.TextXAlignment.Left
+    cLabel.Parent = container
+
+    -- Auto-Destroy after 5 seconds
+    task.delay(5, function()
+        local tween = game:GetService("TweenService"):Create(container, TweenInfo.new(0.5), {TextTransparency = 1, BackgroundTransparency = 1})
+        container:Destroy()
+    end)
+
+    return container
 end
 
 -- ─────────────────────────────────────────────────────────────────
