@@ -1,6 +1,6 @@
 --[[
     ╔═══════════════════════════════════════════════════════════════╗
-    ║                        ClaudeUI v1.0.0                        ║
+    ║                        ClaudeUI                               ║
     ║         Industrial Minimalist Exploit UI SDK for Roblox       ║
     ║   Lead Architect: Claude (Anthropic) × Gemini Collaboration   ║
     ╚═══════════════════════════════════════════════════════════════╝
