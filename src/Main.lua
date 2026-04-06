@@ -444,73 +444,91 @@ function Library:AutoSave()
 end
 
 -- ─────────────────────────────────────────────────────────────────
--- 6. ICON SERVICE (Static Industrial Mode)
+-- 6. ICON SERVICE
 -- ─────────────────────────────────────────────────────────────────
 local IconService = {}
-local ICON_ASSET_ID = "rbxassetid://97757682409962" -- Your spritesheet
-local ICON_CELL     = 64 -- Based on your JSON
+local ICON_ASSET_ID = "rbxassetid://97757682409962"
+local ICON_CELL = 64
 
--- Hard-coded map from your JSON to ensure zero "guessing"
-local ICON_COORDS = {
+-- 1. Hardcoded Fallback (Exact matches for your 10x9 sheet)
+local FALLBACK_MAP = {
     ["arrow-down"] = {0,0}, ["arrow-left"] = {64,0}, ["arrow-right"] = {128,0}, ["arrow-up"] = {192,0},
-    ["settings"] = {320,384}, ["eye"] = {64,192}, ["zap"] = {576,512}, ["close"] = {576,64},
-    ["check"] = {320,64}, ["lock"] = {448,256}, ["trash"] = {0,512}, ["search"] = {256,384},
-    ["home"] = {64,256}, ["info"] = {128,256}, ["alert"] = {448,512}, ["user"] = {256,512}
+    ["back"] = {256,0}, ["badge"] = {320,0}, ["bell-off"] = {384,0}, ["bell"] = {448,0}, ["brain"] = {512,0},
+    ["branch"] = {576,0}, ["bug"] = {0,64}, ["button-ghost"] = {64,64}, ["button"] = {128,64}, ["calendar"] = {192,64},
+    ["card"] = {256,64}, ["checkbox-checked"] = {320,64}, ["checkbox-empty"] = {384,64}, ["checkbox-indeterminate"] = {448,64},
+    ["chip"] = {512,64}, ["close"] = {576,64}, ["code"] = {0,128}, ["commit"] = {64,128}, ["context"] = {128,128},
+    ["copy"] = {192,128}, ["cursor"] = {256,128}, ["download"] = {320,128}, ["dropdown"] = {384,128}, ["edit"] = {448,128},
+    ["error"] = {512,128}, ["external-link"] = {576,128}, ["eye-off"] = {0,192}, ["eye"] = {64,192}, ["file-code"] = {128,192},
+    ["file-text"] = {192,192}, ["file"] = {256,192}, ["filter"] = {320,192}, ["folder-open"] = {384,192}, ["folder"] = {448,192},
+    ["forward"] = {512,192}, ["grid"] = {576,192}, ["heart"] = {0,256}, ["home"] = {64,256}, ["info"] = {128,256},
+    ["input"] = {192,256}, ["link"] = {256,256}, ["list"] = {320,256}, ["loading"] = {384,256}, ["lock"] = {448,256},
+    ["magic"] = {512,256}, ["menu"] = {576,256}, ["message"] = {0,320}, ["minus"] = {64,320}, ["modal"] = {128,320},
+    ["notification"] = {192,320}, ["panel"] = {256,320}, ["paste"] = {320,320}, ["plus"] = {384,320}, ["power"] = {448,320},
+    ["radio-off"] = {512,320}, ["radio-on"] = {576,320}, ["redo"] = {0,384}, ["refresh"] = {64,384}, ["robot"] = {128,384},
+    ["save"] = {192,384}, ["search"] = {256,384}, ["settings"] = {320,384}, ["share"] = {384,384}, ["slider-h"] = {448,384},
+    ["slider"] = {512,384}, ["sort"] = {576,384}, ["spinner-ring"] = {0,448}, ["star"] = {64,448}, ["success"] = {128,448},
+    ["tabs"] = {192,448}, ["terminal"] = {256,448}, ["thinking"] = {320,448}, ["time"] = {384,448}, ["toggle-off"] = {448,448},
+    ["toggle-on"] = {512,448}, ["tooltip"] = {576,448}, ["trash"] = {0,512}, ["undo"] = {64,512}, ["unlock"] = {128,512},
+    ["upload"] = {192,512}, ["user"] = {256,512}, ["users"] = {320,512}, ["variable"] = {384,512}, ["warning"] = {448,512},
+    ["window"] = {512,512}, ["zap"] = {576,512}
 }
 
--- 2. Live Map (Will be populated by GitHub)
 local LiveMap = nil
 
--- Function to fetch map from your GitHub
+-- 2. Background Fetch using your Constant
 task.spawn(function()
+    local url = C.MAP_URL or "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/spritesheet/spritesheet-map.json"
     local success, result = pcall(function()
-        return game:HttpGet(MAP_URL)
+        return game:HttpGet(url)
     end)
     
     if success then
-        local data = HttpService:JSONDecode(result)
-        LiveMap = data.icons
-        print("[ClaudeUI] Icons synced with GitHub.")
-    else
-        warn("[ClaudeUI] GitHub Map failed. Using hardcoded fallback.")
+        local ok, decoded = pcall(function() return HttpService:JSONDecode(result) end)
+        if ok and decoded.icons then 
+            LiveMap = decoded.icons 
+            print("[ClaudeUI] Remote Icon Map Loaded.")
+        end
     end
 end)
 
+-- 3. The "Get" function that NEVER returns nil
 function IconService.get(name)
-    -- Priority: 1. Live GitHub Map | 2. Hardcoded Fallback | 3. Default {0,0}
     local coords = {0, 0}
     
+    -- Safety check: Try LiveMap first, then Fallback, then {0,0}
+    if LiveMap and LiveMap[name] then
+        coords = {LiveMap[name].x, LiveMap[name].y}
+    elseif FALLBACK_MAP[name] then
+        coords = FALLBACK_MAP[name]
+    end
+
+    local img = Instance.new("ImageLabel")
+    img.Name = "CUI_Icon"
+    img.Size = UDim2.fromOffset(24, 24)
+    img.BackgroundTransparency = 1
+    img.Image = ICON_ASSET_ID
+    img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
+    img.ImageRectOffset = Vector2.new(coords[1], coords[2])
+    img.ImageColor3 = Color3.new(1, 1, 1) -- Shows your orange/white art
+    img.ZIndex = C.Z_CONTENT or 20
+    
+    return img
+end
+
+function IconService.apply(imgLabel, name)
+    local coords = {0, 0}
     if LiveMap and LiveMap[name] then
         coords = {LiveMap[name].x, LiveMap[name].y}
     elseif FALLBACK_MAP[name] then
         coords = FALLBACK_MAP[name]
     end
     
-    local img = Instance.new("ImageLabel")
-    img.Name = "CUI_Icon"
-    img.Size = UDim2.fromOffset(28, 28)
-    img.BackgroundTransparency = 1
-    img.Image = ICON_ASSET_ID
-    img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
-    img.ImageRectOffset = Vector2.new(coords[1], coords[2])
-    img.ImageColor3 = Color3.new(1, 1, 1) -- Keep original Orange/Black
-    img.ZIndex = 25
-    
-    return img
-end
-
--- Compatibility functions for the rest of ClaudeUI.lua
-function IconService.apply(imgLabel, name)
-    local coords = ICON_COORDS[name] or {0, 0}
     imgLabel.Image = ICON_ASSET_ID
     imgLabel.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
     imgLabel.ImageRectOffset = Vector2.new(coords[1], coords[2])
-    imgLabel.ImageColor3 = Color3.new(1, 1, 1)
 end
 
-function IconService.setTheme() 
-    -- Handled via static Orange/Black assets, so this remains empty.
-end
+function IconService.setTheme() end -- Theme is baked into the sheet
 
 -- ─────────────────────────────────────────────────────────────────
 -- 7. LAYOUT MANAGER
