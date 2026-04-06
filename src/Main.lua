@@ -102,7 +102,7 @@ local C = {
     Z_SYSTEM     = 200,
 
     -- Version & GitHub Sync
-    VERSION      = "1.0.3",
+    VERSION      = "1.0.4",
     VERSION_URL  = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/versions.txt",
     MAP_URL      = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/spritesheet/spritesheet-map.json",
     REPO_URL     = "https://github.com/Damix-hash/ClaudeUI",
