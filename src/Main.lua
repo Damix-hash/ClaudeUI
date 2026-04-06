@@ -458,22 +458,43 @@ local ICON_COORDS = {
     ["home"] = {64,256}, ["info"] = {128,256}, ["alert"] = {448,512}, ["user"] = {256,512}
 }
 
+-- 2. Live Map (Will be populated by GitHub)
+local LiveMap = nil
+
+-- Function to fetch map from your GitHub
+task.spawn(function()
+    local success, result = pcall(function()
+        return game:HttpGet(MAP_URL)
+    end)
+    
+    if success then
+        local data = HttpService:JSONDecode(result)
+        LiveMap = data.icons
+        print("[ClaudeUI] Icons synced with GitHub.")
+    else
+        warn("[ClaudeUI] GitHub Map failed. Using hardcoded fallback.")
+    end
+end)
+
 function IconService.get(name)
-    local coords = ICON_COORDS[name] or {0, 0}
+    -- Priority: 1. Live GitHub Map | 2. Hardcoded Fallback | 3. Default {0,0}
+    local coords = {0, 0}
+    
+    if LiveMap and LiveMap[name] then
+        coords = {LiveMap[name].x, LiveMap[name].y}
+    elseif FALLBACK_MAP[name] then
+        coords = FALLBACK_MAP[name]
+    end
     
     local img = Instance.new("ImageLabel")
     img.Name = "CUI_Icon"
-    img.Size = UDim2.fromOffset(32, 32) -- Standard Industrial Size
+    img.Size = UDim2.fromOffset(28, 28)
     img.BackgroundTransparency = 1
-    
-    -- Displaying the icon exactly as it looks on the sheet
     img.Image = ICON_ASSET_ID
     img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
     img.ImageRectOffset = Vector2.new(coords[1], coords[2])
-    
-    -- No Tinting: Keeps your original Orange/Black/White colors
-    img.ImageColor3 = Color3.new(1, 1, 1) 
-    img.ScaleType = Enum.ScaleType.Stretch
+    img.ImageColor3 = Color3.new(1, 1, 1) -- Keep original Orange/Black
+    img.ZIndex = 25
     
     return img
 end
