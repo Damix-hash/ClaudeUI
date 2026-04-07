@@ -565,17 +565,10 @@ end)
 
 -- 3. The "Get" function that NEVER returns nil
 function IconService.get(name)
-    local img = Instance.new("ImageLabel")
-    img.Name = "CUI_Icon"
-    img.Size = UDim2.fromOffset(24, 24)
-    img.BackgroundTransparency = 1
-    img.Image = ICON_ASSET_ID
-    img.ImageColor3 = Color3.new(1, 1, 1)
-    img.ZIndex = 25 -- Force it to the front
-    -- Comment out these two lines to see the full sheet:
-    -- img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
-    -- img.ImageRectOffset = Vector2.new(0, 0) 
-    return img
+    local test = Instance.new("Frame")
+    test.Size = UDim2.fromOffset(20, 20)
+    test.BackgroundColor3 = Color3.new(1, 0, 0) -- Bright Red
+    return test
 end
 
 function IconService.apply(imgLabel, name)
