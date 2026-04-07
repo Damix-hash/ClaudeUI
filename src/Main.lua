@@ -520,68 +520,81 @@ end
 -- ─────────────────────────────────────────────────────────────────
 local IconService = {}
 local ICON_ASSET_ID = "rbxassetid://97757682409962"
-local ICON_CELL = 64
+local CELL = 32 -- The size that worked in your test script
 
--- 1. Hardcoded Fallback (Exact matches for your 10x9 sheet)
 local FALLBACK_MAP = {
-    ["arrow-down"] = {0,0}, ["arrow-left"] = {64,0}, ["arrow-right"] = {128,0}, ["arrow-up"] = {192,0},
-    ["back"] = {256,0}, ["badge"] = {320,0}, ["bell-off"] = {384,0}, ["bell"] = {448,0}, ["brain"] = {512,0},
-    ["branch"] = {576,0}, ["bug"] = {0,64}, ["button-ghost"] = {64,64}, ["button"] = {128,64}, ["calendar"] = {192,64},
-    ["card"] = {256,64}, ["checkbox-checked"] = {320,64}, ["checkbox-empty"] = {384,64}, ["checkbox-indeterminate"] = {448,64},
-    ["chip"] = {512,64}, ["close"] = {576,64}, ["code"] = {0,128}, ["commit"] = {64,128}, ["context"] = {128,128},
-    ["copy"] = {192,128}, ["cursor"] = {256,128}, ["download"] = {320,128}, ["dropdown"] = {384,128}, ["edit"] = {448,128},
-    ["error"] = {512,128}, ["external-link"] = {576,128}, ["eye-off"] = {0,192}, ["eye"] = {64,192}, ["file-code"] = {128,192},
-    ["file-text"] = {192,192}, ["file"] = {256,192}, ["filter"] = {320,192}, ["folder-open"] = {384,192}, ["folder"] = {448,192},
-    ["forward"] = {512,192}, ["grid"] = {576,192}, ["heart"] = {0,256}, ["home"] = {64,256}, ["info"] = {128,256},
-    ["input"] = {192,256}, ["link"] = {256,256}, ["list"] = {320,256}, ["loading"] = {384,256}, ["lock"] = {448,256},
-    ["magic"] = {512,256}, ["menu"] = {576,256}, ["message"] = {0,320}, ["minus"] = {64,320}, ["modal"] = {128,320},
-    ["notification"] = {192,320}, ["panel"] = {256,320}, ["paste"] = {320,320}, ["plus"] = {384,320}, ["power"] = {448,320},
-    ["radio-off"] = {512,320}, ["radio-on"] = {576,320}, ["redo"] = {0,384}, ["refresh"] = {64,384}, ["robot"] = {128,384},
-    ["save"] = {192,384}, ["search"] = {256,384}, ["settings"] = {320,384}, ["share"] = {384,384}, ["slider-h"] = {448,384},
-    ["slider"] = {512,384}, ["sort"] = {576,384}, ["spinner-ring"] = {0,448}, ["star"] = {64,448}, ["success"] = {128,448},
-    ["tabs"] = {192,448}, ["terminal"] = {256,448}, ["thinking"] = {320,448}, ["time"] = {384,448}, ["toggle-off"] = {448,448},
-    ["toggle-on"] = {512,448}, ["tooltip"] = {576,448}, ["trash"] = {0,512}, ["undo"] = {64,512}, ["unlock"] = {128,512},
-    ["upload"] = {192,512}, ["user"] = {256,512}, ["users"] = {320,512}, ["variable"] = {384,512}, ["warning"] = {448,512},
-    ["window"] = {512,512}, ["zap"] = {576,512}
+    -- ROW 1
+    ["arrow-down"] = {0*CELL, 0*CELL}, ["arrow-left"] = {1*CELL, 0*CELL}, ["arrow-right"] = {2*CELL, 0*CELL}, 
+    ["arrow-up"] = {3*CELL, 0*CELL}, ["back"] = {4*CELL, 0*CELL}, ["button-ghost"] = {5*CELL, 0*CELL},
+    ["bell-off"] = {6*CELL, 0*CELL}, ["bell"] = {7*CELL, 0*CELL}, ["brain"] = {8*CELL, 0*CELL}, ["branch"] = {9*CELL, 0*CELL},
+
+    -- ROW 2
+    ["bug"] = {0*CELL, 1*CELL}, ["input"] = {1*CELL, 1*CELL}, ["button"] = {2*CELL, 1*CELL}, ["calendar"] = {3*CELL, 1*CELL},
+    ["card"] = {4*CELL, 1*CELL}, ["checkbox-checked"] = {5*CELL, 1*CELL}, ["checkbox-empty"] = {6*CELL, 1*CELL}, 
+    ["checkbox-indeterminate"] = {7*CELL, 1*CELL}, ["chip"] = {8*CELL, 1*CELL}, ["close"] = {9*CELL, 1*CELL},
+
+    -- ROW 3
+    ["code"] = {0*CELL, 2*CELL}, ["commit"] = {1*CELL, 2*CELL}, ["crosshair"] = {2*CELL, 2*CELL}, ["file-text"] = {3*CELL, 2*CELL},
+    ["terminal"] = {4*CELL, 2*CELL}, ["download"] = {5*CELL, 2*CELL}, ["dropdown"] = {6*CELL, 2*CELL}, ["edit"] = {7*CELL, 2*CELL},
+    ["error"] = {8*CELL, 2*CELL}, ["external-link"] = {9*CELL, 2*CELL},
+
+    -- ROW 4
+    ["eye-off"] = {0*CELL, 3*CELL}, ["eye"] = {1*CELL, 3*CELL}, ["file-code"] = {2*CELL, 3*CELL}, ["file"] = {4*CELL, 3*CELL},
+    ["filter"] = {5*CELL, 3*CELL}, ["folder-open"] = {6*CELL, 3*CELL}, ["folder"] = {7*CELL, 3*CELL}, ["forward"] = {8*CELL, 3*CELL},
+    ["grid"] = {9*CELL, 3*CELL},
+
+    -- ROW 5
+    ["heart"] = {0*CELL, 4*CELL}, ["home"] = {1*CELL, 4*CELL}, ["info"] = {2*CELL, 4*CELL}, ["link"] = {4*CELL, 4*CELL},
+    ["list"] = {5*CELL, 4*CELL}, ["loading"] = {6*CELL, 4*CELL}, ["lock"] = {7*CELL, 4*CELL}, ["star"] = {8*CELL, 4*CELL},
+    ["menu"] = {9*CELL, 4*CELL},
+
+    -- ROW 6
+    ["message"] = {0*CELL, 5*CELL}, ["minus"] = {1*CELL, 5*CELL}, ["notification"] = {3*CELL, 5*CELL}, ["panel"] = {4*CELL, 5*CELL},
+    ["paste"] = {5*CELL, 5*CELL}, ["plus"] = {6*CELL, 5*CELL}, ["power"] = {7*CELL, 5*CELL}, ["radio-off"] = {8*CELL, 5*CELL},
+    ["radio-on"] = {9*CELL, 5*CELL},
+
+    -- ROW 7
+    ["redo"] = {0*CELL, 6*CELL}, ["refresh"] = {1*CELL, 6*CELL}, ["robot"] = {2*CELL, 6*CELL}, ["save"] = {3*CELL, 6*CELL},
+    ["search"] = {4*CELL, 6*CELL}, ["settings"] = {5*CELL, 6*CELL}, ["share"] = {6*CELL, 6*CELL}, ["slider-h"] = {7*CELL, 6*CELL},
+    ["slider"] = {8*CELL, 6*CELL}, ["sort"] = {9*CELL, 6*CELL},
+
+    -- ROW 8
+    ["spinner-ring"] = {0*CELL, 7*CELL}, ["success"] = {2*CELL, 7*CELL}, ["tabs"] = {3*CELL, 7*CELL}, ["thinking"] = {5*CELL, 7*CELL},
+    ["time"] = {6*CELL, 7*CELL}, ["toggle-off"] = {7*CELL, 7*CELL}, ["toggle-on"] = {8*CELL, 7*CELL},
+
+    -- ROW 9
+    ["trash"] = {0*CELL, 8*CELL}, ["undo"] = {1*CELL, 8*CELL}, ["unlock"] = {2*CELL, 8*CELL}, ["upload"] = {3*CELL, 8*CELL},
+    ["user"] = {4*CELL, 8*CELL}, ["users"] = {5*CELL, 8*CELL}, ["variable"] = {6*CELL, 8*CELL}, ["warning"] = {7*CELL, 8*CELL},
+    ["window"] = {8*CELL, 8*CELL}, ["zap"] = {9*CELL, 8*CELL}
 }
 
-local LiveMap = nil
+-- ALIASES (Mapping old names to your new orange icons)
+FALLBACK_MAP["aim"] = FALLBACK_MAP["crosshair"]
+FALLBACK_MAP["target"] = FALLBACK_MAP["crosshair"]
+FALLBACK_MAP["visuals"] = FALLBACK_MAP["eye"]
+FALLBACK_MAP["esp"] = FALLBACK_MAP["eye"]
+FALLBACK_MAP["config"] = FALLBACK_MAP["settings"]
+FALLBACK_MAP["setup"] = FALLBACK_MAP["settings"]
+FALLBACK_MAP["misc"] = FALLBACK_MAP["zap"]
+FALLBACK_MAP["lightning"] = FALLBACK_MAP["zap"]
 
--- 2. Background Fetch using your Constant
-task.spawn(function()
-    local url = C.MAP_URL or "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/spritesheet/spritesheet-map.json"
-    local success, result = pcall(function()
-        return game:HttpGet(url)
-    end)
-    
-    if success then
-        local ok, decoded = pcall(function() return HttpService:JSONDecode(result) end)
-        if ok and decoded.icons then 
-            LiveMap = decoded.icons 
-            print("[ClaudeUI] Remote Icon Map Loaded.")
-        end
-    end
-end)
-
--- 3. The "Get" function that NEVER returns nil
 function IconService.get(name)
-    local test = Instance.new("Frame")
-    test.Size = UDim2.fromOffset(20, 20)
-    test.BackgroundColor3 = Color3.new(1, 0, 0) -- Bright Red
-    return test
-end
+    local coords = FALLBACK_MAP[name] or {0, 0}
 
-function IconService.apply(imgLabel, name)
-    local coords = {0, 0}
-    if LiveMap and LiveMap[name] then
-        coords = {LiveMap[name].x, LiveMap[name].y}
-    elseif FALLBACK_MAP[name] then
-        coords = FALLBACK_MAP[name]
-    end
+    local img = Instance.new("ImageLabel")
+    img.Name = "CUI_Icon"
+    img.Size = UDim2.fromOffset(24, 24)
+    img.BackgroundTransparency = 1
+    img.Image = "rbxassetid://97757682409962"
     
-    imgLabel.Image = ICON_ASSET_ID
-    imgLabel.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
-    imgLabel.ImageRectOffset = Vector2.new(coords[1], coords[2])
+    -- Correct 32px window size
+    img.ImageRectSize = Vector2.new(32, 32) 
+    img.ImageRectOffset = Vector2.new(coords[1], coords[2])
+    
+    img.ImageColor3 = Color3.new(1, 1, 1)
+    img.ZIndex = 15
+    
+    return img
 end
 
 function IconService.setTheme() end -- Theme is baked into the sheet
