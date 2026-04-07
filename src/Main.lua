@@ -2419,73 +2419,1201 @@ if not IS_STUDIO then
     pcall(Protection.lockTable, Library)
 end
 
-return Library
-
 --[[
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- USAGE EXAMPLE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                   ClaudeUI — Additions Pack                   ║
+    ║        Paste this BELOW the existing library code,            ║
+    ║        ABOVE the final `return Library` line.                 ║
+    ║                                                               ║
+    ║  NEW COMPONENTS:                                              ║
+    ║    • Button         — clickable action row                    ║
+    ║    • Dropdown       — single-select overlay menu              ║
+    ║    • TextInput      — validated free-text field               ║
+    ║    • ColorPicker    — HSV wheel + hex readout                 ║
+    ║    • Separator      — labelled divider                        ║
+    ║    • Label          — static info/description row             ║
+    ║                                                               ║
+    ║  NEW SYSTEMS:                                                 ║
+    ║    • NotificationQueue  — stacking, auto-dismiss toasts       ║
+    ║    • SearchBar          — live filter across all sections     ║
+    ║    • KeyboardNav        — arrow-key tab switching             ║
+    ║    • ProfileSwitcher    — named save-slot UI                  ║
+    ╚═══════════════════════════════════════════════════════════════╝
+]]
+
+-- ─────────────────────────────────────────────────────────────────
+-- A. BUTTON COMPONENT
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Usage:
+    {
+        type      = "button",
+        label     = "Teleport to Waypoint",
+        subLabel  = "Instantly moves your character",   -- optional
+        icon      = "zap",                              -- optional
+        style     = "default" | "danger" | "accent",   -- optional
+        tooltip   = "...",                              -- optional
+        featureId = "...",                              -- optional
+        onClick   = function() end,
+    }
+]]
+
+local function _makeButton(parent, cfg)
+    local accentColor = cfg.style == "danger"  and C.ERROR
+                     or cfg.style == "accent"  and C.ACCENT
+                     or C.BORDER
+
+    local row = _frame(parent, UDim2.new(1, 0, 0, cfg.subLabel and 48 or 36), nil, C.RAIL)
+    _corner(row)
+    local rowStroke = _stroke(row, accentColor == C.BORDER and C.BORDER or accentColor)
+    _padding(row, 10)
+
+    -- Optional icon
+    if cfg.icon then
+        local ico = IconService.get(cfg.icon, 14)
+        ico.AnchorPoint = Vector2.new(0, 0.5)
+        ico.Position    = UDim2.new(0, 0, 0.5, 0)
+        ico.ZIndex      = C.Z_CONTENT + 1
+        ico.Parent      = row
+    end
+
+    local labelOffX = cfg.icon and 20 or 0
+
+    local lbl = _label(row, cfg.label, C.F_MEDIUM, 11, C.TEXT)
+    lbl.Size     = UDim2.new(0.75, -labelOffX, 0, 14)
+    lbl.Position = UDim2.fromOffset(labelOffX, cfg.subLabel and 8 or 0)
+
+    if cfg.subLabel then
+        local sub = _label(row, cfg.subLabel, C.F_MONO, 10, C.DIM)
+        sub.Size     = UDim2.new(0.75, -labelOffX, 0, 12)
+        sub.Position = UDim2.fromOffset(labelOffX, 26)
+    end
+
+    -- Arrow indicator on the right
+    local arrow = _label(row, "→", C.F_BOLD, 14,
+        accentColor == C.BORDER and C.DIM or accentColor)
+    arrow.AnchorPoint    = Vector2.new(1, 0.5)
+    arrow.Size           = UDim2.fromOffset(20, 20)
+    arrow.Position       = UDim2.new(1, 0, 0.5, 0)
+    arrow.TextXAlignment = Enum.TextXAlignment.Center
+
+    -- Hover
+    row.MouseEnter:Connect(function()
+        TweenService:Create(row,       C.T_FAST, {BackgroundColor3 = C.ACTIVE_BG}):Play()
+        TweenService:Create(rowStroke, C.T_FAST, {Color = C.ACCENT}):Play()
+        TweenService:Create(arrow,     C.T_FAST, {TextColor3 = C.ACCENT}):Play()
+        TweenService:Create(lbl,       C.T_FAST, {TextColor3 = C.ACCENT}):Play()
+    end)
+    row.MouseLeave:Connect(function()
+        TweenService:Create(row,       C.T_FAST, {BackgroundColor3 = C.RAIL}):Play()
+        TweenService:Create(rowStroke, C.T_FAST, {Color = accentColor}):Play()
+        TweenService:Create(arrow,     C.T_FAST, {TextColor3 = accentColor == C.BORDER and C.DIM or accentColor}):Play()
+        TweenService:Create(lbl,       C.T_FAST, {TextColor3 = C.TEXT}):Play()
+    end)
+
+    -- Press flash
+    row.InputBegan:Connect(_debounce("btn_" .. (cfg.featureId or cfg.label), function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+        TweenService:Create(row, C.T_SETTLE, {BackgroundColor3 = C.ACCENT}):Play()
+        TweenService:Create(lbl, C.T_SETTLE, {TextColor3 = Color3.new(0, 0, 0)}):Play()
+
+        task.delay(0.08, function()
+            TweenService:Create(row, C.T_FAST, {BackgroundColor3 = C.ACTIVE_BG}):Play()
+            TweenService:Create(lbl, C.T_FAST, {TextColor3 = C.ACCENT}):Play()
+            if cfg.onClick then Library:SafeCall(cfg.onClick) end
+        end)
+    end))
+
+    if cfg.tooltip  then _attachTooltip(row, cfg.tooltip) end
+    if cfg.featureId then
+        _attachContextMenu(row, cfg.featureId, function()
+            -- buttons have no resettable state
+        end)
+    end
+
+    return row
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- B. DROPDOWN COMPONENT
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Usage:
+    {
+        type     = "dropdown",
+        label    = "Target Bone",
+        options  = {"Head", "Neck", "Chest", "Pelvis"},
+        default  = "Head",
+        tooltip  = "...",
+        onChange = function(selected) end,
+    }
+]]
+
+local _openDropdown = nil   -- only one open at a time
+
+local function _makeDropdown(parent, cfg)
+    local key      = cfg._key or cfg.label
+    local selected = cfg.default or (cfg.options and cfg.options[1]) or ""
+    StateManager._state[key] = selected
+
+    local row = _frame(parent, UDim2.new(1, 0, 0, 36), nil, C.RAIL)
+    _corner(row); local rowStroke = _stroke(row)
+    _padding(row, 10)
+
+    local lbl = _label(row, cfg.label, C.F_MEDIUM, 11, C.TEXT)
+    lbl.Size = UDim2.new(0.45, 0, 1, 0)
+
+    -- Value pill
+    local pill = _frame(row, UDim2.fromOffset(0, 22), nil, C.BASE)
+    pill.AutomaticSize  = Enum.AutomaticSize.X
+    pill.AnchorPoint    = Vector2.new(1, 0.5)
+    pill.Position       = UDim2.new(1, 0, 0.5, 0)
+    _corner(pill); _stroke(pill, C.BORDER)
+
+    local pillLayout = Instance.new("UIListLayout")
+    pillLayout.FillDirection = Enum.FillDirection.Horizontal
+    pillLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    pillLayout.Padding = UDim.new(0, 4)
+    pillLayout.Parent = pill
+
+    local pillPad = Instance.new("UIPadding")
+    pillPad.PaddingLeft  = UDim.new(0, 8)
+    pillPad.PaddingRight = UDim.new(0, 6)
+    pillPad.Parent = pill
+
+    local valueLbl = _label(pill, selected, C.F_MONO, 10, C.ACCENT)
+    valueLbl.AutomaticSize = Enum.AutomaticSize.XY
+    valueLbl.Size = UDim2.fromOffset(0, 0)
+
+    local chevron = _label(pill, "▾", C.F_BOLD, 10, C.DIM)
+    chevron.AutomaticSize = Enum.AutomaticSize.XY
+    chevron.Size = UDim2.fromOffset(0, 0)
+
+    -- ── Overlay menu ──────────────────────────────────────────────
+    local function openMenu()
+        -- close existing
+        if _openDropdown then
+            pcall(function() _openDropdown:Destroy() end)
+            _openDropdown = nil
+        end
+
+        local vp      = workspace.CurrentCamera.ViewportSize
+        local rowAbs  = row.AbsolutePosition
+        local rowSz   = row.AbsoluteSize
+        local itemH   = 28
+        local menuH   = #cfg.options * itemH
+        local spaceBelow = vp.Y - (rowAbs.Y + rowSz.Y)
+        local openUp  = spaceBelow < menuH + 8 and rowAbs.Y > menuH + 8
+
+        local menu = _frame(Library._gui,
+            UDim2.fromOffset(math.max(rowSz.X * 0.55, 120), 0),
+            UDim2.fromOffset(
+                rowAbs.X + rowSz.X - math.max(rowSz.X * 0.55, 120),
+                openUp and (rowAbs.Y - menuH - 4) or (rowAbs.Y + rowSz.Y + 4)
+            ),
+            C.BASE, C.Z_CTX)
+        menu.ClipsDescendants = true
+        _corner(menu, C.RADIUS_LG)
+        _stroke(menu, C.ACCENT)
+        _listLayout(menu, Enum.FillDirection.Vertical, 0)
+
+        TweenService:Create(menu, C.T_MED, {
+            Size = UDim2.fromOffset(math.max(rowSz.X * 0.55, 120), menuH)
+        }):Play()
+
+        for _, option in ipairs(cfg.options) do
+            local isActive = option == selected
+            local item = Instance.new("TextButton")
+            item.Size             = UDim2.new(1, 0, 0, itemH)
+            item.BackgroundColor3 = isActive and C.ACTIVE_BG or C.BASE
+            item.BorderSizePixel  = 0
+            item.FontFace         = C.F_MEDIUM
+            item.TextSize         = 11
+            item.TextColor3       = isActive and C.ACCENT or C.TEXT
+            item.TextXAlignment   = Enum.TextXAlignment.Left
+            item.Text             = "  " .. option
+            item.ZIndex           = C.Z_CTX + 1
+            item.Parent           = menu
+
+            item.MouseEnter:Connect(function()
+                if option ~= selected then
+                    TweenService:Create(item, C.T_FAST, {BackgroundColor3 = C.RAIL}):Play()
+                end
+            end)
+            item.MouseLeave:Connect(function()
+                TweenService:Create(item, C.T_FAST, {
+                    BackgroundColor3 = option == selected and C.ACTIVE_BG or C.BASE
+                }):Play()
+            end)
+
+            item.Activated:Connect(function()
+                selected = option
+                StateManager.set(key, selected)
+                valueLbl.Text = selected
+                if cfg.onChange then Library:SafeCall(cfg.onChange, selected) end
+                TweenService:Create(menu, C.T_FAST, {
+                    Size = UDim2.fromOffset(menu.AbsoluteSize.X, 0)
+                }):Play()
+                task.delay(0.12, function()
+                    if menu and menu.Parent then menu:Destroy() end
+                    _openDropdown = nil
+                end)
+            end)
+        end
+
+        _openDropdown = menu
+
+        -- close on outside click
+        local closeConn
+        closeConn = Library:_trackConnection(UserInputService.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                task.defer(function()
+                    if _openDropdown == menu then
+                        TweenService:Create(menu, C.T_FAST, {
+                            Size = UDim2.fromOffset(menu.AbsoluteSize.X, 0)
+                        }):Play()
+                        task.delay(0.12, function()
+                            if menu and menu.Parent then menu:Destroy() end
+                            _openDropdown = nil
+                        end)
+                    end
+                end)
+            end
+        end))
+    end
+
+    row.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            TweenService:Create(rowStroke, C.T_FAST, {Color = C.ACCENT}):Play()
+            openMenu()
+        end
+    end)
+
+    row.MouseEnter:Connect(function()
+        TweenService:Create(rowStroke, C.T_FAST, {Color = C.ACCENT}):Play()
+    end)
+    row.MouseLeave:Connect(function()
+        if _openDropdown == nil then
+            TweenService:Create(rowStroke, C.T_FAST, {Color = C.BORDER}):Play()
+        end
+    end)
+
+    StateManager.watch(key, function(v)
+        selected    = v
+        valueLbl.Text = v
+    end)
+
+    if cfg.tooltip then _attachTooltip(row, cfg.tooltip) end
+
+    return row
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- C. TEXT INPUT COMPONENT
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Usage:
+    {
+        type        = "textinput",
+        label       = "Custom IP",
+        placeholder = "192.168.1.1",
+        default     = "",
+        maxLength   = 64,
+        validator   = function(text) return text:match("^%d+%.%d+%.%d+%.%d+$") end,
+        tooltip     = "...",
+        onChange    = function(text) end,
+        onSubmit    = function(text) end,  -- fires on Enter / focus lost
+    }
+]]
+
+local function _makeTextInput(parent, cfg)
+    local key   = cfg._key or cfg.label
+    local value = cfg.default or ""
+    StateManager._state[key] = value
+
+    local row = _frame(parent, UDim2.new(1, 0, 0, 58), nil, C.RAIL)
+    _corner(row); local rowStroke = _stroke(row)
+    _padding(row, 10)
+    _listLayout(row, Enum.FillDirection.Vertical, 4)
+
+    local topRow = _frame(row, UDim2.new(1, 0, 0, 14), nil, C.RAIL)
+    topRow.BackgroundTransparency = 1
+    _listLayout(topRow, Enum.FillDirection.Horizontal, 0)
+
+    local lbl = _label(topRow, cfg.label, C.F_MEDIUM, 11, C.TEXT)
+    lbl.Size = UDim2.new(0.7, 0, 1, 0)
+
+    -- Validation badge (right side of label row)
+    local badge = _frame(topRow, UDim2.fromOffset(44, 14), nil, C.BASE)
+    badge.AnchorPoint    = Vector2.new(1, 0.5)
+    badge.BackgroundTransparency = 1
+    local badgeLbl = _label(badge, "", C.F_MONO, 9, C.DIM)
+    badgeLbl.Size          = UDim2.fromScale(1, 1)
+    badgeLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+    -- Input field
+    local inputBg = _frame(row, UDim2.new(1, 0, 0, 24), nil, C.BASE)
+    _corner(inputBg); local inputStroke = _stroke(inputBg, C.BORDER)
+
+    local box = Instance.new("TextBox")
+    box.Size                  = UDim2.new(1, -16, 1, 0)
+    box.Position              = UDim2.fromOffset(8, 0)
+    box.BackgroundTransparency = 1
+    box.FontFace              = C.F_MONO
+    box.TextSize              = 11
+    box.TextColor3            = C.TEXT
+    box.PlaceholderText       = cfg.placeholder or ""
+    box.PlaceholderColor3     = C.DIM
+    box.Text                  = value
+    box.TextXAlignment        = Enum.TextXAlignment.Left
+    box.ClearTextOnFocus      = false
+    box.ZIndex                = C.Z_CONTENT + 1
+    if cfg.maxLength then box.MaxVisibleGraphemes = cfg.maxLength end
+    box.Parent = inputBg
+
+    local function validate(text)
+        if not cfg.validator then
+            badgeLbl.Text      = ""
+            badgeLbl.TextColor3 = C.DIM
+            return true
+        end
+        local ok = Library:SafeCall(cfg.validator, text)
+        if ok then
+            badgeLbl.Text       = "✓ OK"
+            badgeLbl.TextColor3 = C.ACCENT
+            TweenService:Create(inputStroke, C.T_FAST, {Color = C.ACCENT}):Play()
+        else
+            badgeLbl.Text       = "✗ ERR"
+            badgeLbl.TextColor3 = C.ERROR
+            TweenService:Create(inputStroke, C.T_FAST, {Color = C.ERROR}):Play()
+        end
+        return ok
+    end
+
+    box.Focused:Connect(function()
+        TweenService:Create(rowStroke,   C.T_FAST, {Color = C.ACCENT}):Play()
+        TweenService:Create(inputStroke, C.T_FAST, {Color = C.ACCENT}):Play()
+    end)
+
+    box.FocusLost:Connect(function(enterPressed)
+        local text = box.Text
+        local ok   = validate(text)
+        TweenService:Create(rowStroke, C.T_FAST, {Color = C.BORDER}):Play()
+        if not ok then
+            TweenService:Create(inputStroke, C.T_MED, {Color = C.BORDER}):Play()
+            return
+        end
+        StateManager.set(key, text)
+        if cfg.onSubmit  then Library:SafeCall(cfg.onSubmit, text) end
+    end)
+
+    box:GetPropertyChangedSignal("Text"):Connect(function()
+        local text = box.Text
+        StateManager._state[key] = text
+        validate(text)
+        if cfg.onChange then Library:SafeCall(cfg.onChange, text) end
+    end)
+
+    StateManager.watch(key, function(v)
+        if box.Text ~= v then box.Text = v end
+    end)
+
+    if cfg.tooltip then _attachTooltip(row, cfg.tooltip) end
+
+    return row
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- D. COLOR PICKER COMPONENT
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Usage:
+    {
+        type     = "colorpicker",
+        label    = "ESP Color",
+        default  = Color3.fromRGB(232, 93, 0),
+        tooltip  = "...",
+        onChange = function(color3) end,
+    }
+]]
+
+local function _makeColorPicker(parent, cfg)
+    local key   = cfg._key or cfg.label
+    local color = cfg.default or C.ACCENT
+    StateManager._state[key] = color
+
+    -- Convert Color3 ↔ HSV helpers
+    local function toHSV(c)
+        local h, s, v = Color3.toHSV(c)
+        return h, s, v
+    end
+    local function fromHSV(h, s, v)
+        return Color3.fromHSV(h, s, v)
+    end
+    local function toHex(c)
+        return string.format("%02X%02X%02X",
+            math.floor(c.R * 255),
+            math.floor(c.G * 255),
+            math.floor(c.B * 255))
+    end
+
+    local hue, sat, val = toHSV(color)
+
+    -- Header row (always visible)
+    local row = _frame(parent, UDim2.new(1, 0, 0, 36), nil, C.RAIL)
+    _corner(row); local rowStroke = _stroke(row)
+    _padding(row, 10)
+
+    local lbl = _label(row, cfg.label, C.F_MEDIUM, 11, C.TEXT)
+    lbl.Size = UDim2.new(0.6, 0, 0, 14)
+
+    -- Swatch + hex
+    local swatchRow = _frame(row, UDim2.fromOffset(0, 22), nil, C.BASE)
+    swatchRow.AutomaticSize = Enum.AutomaticSize.X
+    swatchRow.AnchorPoint   = Vector2.new(1, 0.5)
+    swatchRow.Position      = UDim2.new(1, 0, 0.5, 0)
+    _corner(swatchRow); _stroke(swatchRow, C.BORDER)
+
+    local swatchLayout = Instance.new("UIListLayout")
+    swatchLayout.FillDirection       = Enum.FillDirection.Horizontal
+    swatchLayout.VerticalAlignment   = Enum.VerticalAlignment.Center
+    swatchLayout.Padding             = UDim.new(0, 6)
+    swatchLayout.Parent              = swatchRow
+
+    local swatchPad = Instance.new("UIPadding")
+    swatchPad.PaddingLeft   = UDim.new(0, 6)
+    swatchPad.PaddingRight  = UDim.new(0, 6)
+    swatchPad.Parent        = swatchRow
+
+    local swatch = _frame(swatchRow, UDim2.fromOffset(14, 14), nil, color)
+    _corner(swatch, UDim.new(0, 2))
+
+    local hexLbl = _label(swatchRow, "#" .. toHex(color), C.F_MONO, 10, C.ACCENT)
+    hexLbl.AutomaticSize  = Enum.AutomaticSize.XY
+    hexLbl.Size           = UDim2.fromOffset(0, 0)
+
+    -- ── Expandable picker panel ────────────────────────────────────
+    local panel = _frame(parent, UDim2.new(1, 0, 0, 0), nil, C.RAIL)
+    panel.ClipsDescendants = true
+    _corner(panel); _stroke(panel, C.BORDER)
+    _padding(panel, 10)
+    _listLayout(panel, Enum.FillDirection.Vertical, 8)
+
+    local PANEL_H = 130
+    local expanded = false
+
+    -- Hue bar
+    local hueFrame = _frame(panel, UDim2.new(1, 0, 0, 12), nil, C.BASE)
+    _corner(hueFrame, UDim.new(0, 3))
+
+    -- Gradient hue bar using UIGradient
+    local hueGrad = Instance.new("UIGradient")
+    hueGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,   Color3.fromHSV(0,   1, 1)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromHSV(0.17, 1, 1)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromHSV(0.33, 1, 1)),
+        ColorSequenceKeypoint.new(0.5,  Color3.fromHSV(0.5,  1, 1)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromHSV(0.67, 1, 1)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromHSV(0.83, 1, 1)),
+        ColorSequenceKeypoint.new(1,   Color3.fromHSV(1,   1, 1)),
+    })
+    hueGrad.Parent = hueFrame
+
+    local hueCursor = _frame(hueFrame, UDim2.fromOffset(4, 16), nil, C.TEXT)
+    hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    hueCursor.Position    = UDim2.new(hue, 0, 0.5, 0)
+    _corner(hueCursor, UDim.new(0, 2))
+
+    -- Saturation bar
+    local satFrame = _frame(panel, UDim2.new(1, 0, 0, 12), nil, C.BASE)
+    _corner(satFrame, UDim.new(0, 3))
+
+    local satGrad = Instance.new("UIGradient")
+    satGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+        ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, 1, 1)),
+    })
+    satGrad.Parent = satFrame
+
+    local satCursor = _frame(satFrame, UDim2.fromOffset(4, 16), nil, C.TEXT)
+    satCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    satCursor.Position    = UDim2.new(sat, 0, 0.5, 0)
+    _corner(satCursor, UDim.new(0, 2))
+
+    -- Value bar
+    local valFrame = _frame(panel, UDim2.new(1, 0, 0, 12), nil, C.BASE)
+    _corner(valFrame, UDim.new(0, 3))
+
+    local valGrad = Instance.new("UIGradient")
+    valGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, sat, 1)),
+    })
+    valGrad.Parent = valFrame
+
+    local valCursor = _frame(valFrame, UDim2.fromOffset(4, 16), nil, C.TEXT)
+    valCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    valCursor.Position    = UDim2.new(val, 0, 0.5, 0)
+    _corner(valCursor, UDim.new(0, 2))
+
+    -- Hex input
+    local hexBox = Instance.new("TextBox")
+    hexBox.Size                  = UDim2.new(1, 0, 0, 24)
+    hexBox.BackgroundColor3      = C.BASE
+    hexBox.BorderSizePixel       = 0
+    hexBox.FontFace              = C.F_MONO
+    hexBox.TextSize              = 11
+    hexBox.TextColor3            = C.ACCENT
+    hexBox.PlaceholderText       = "HEX e.g. E85D00"
+    hexBox.PlaceholderColor3     = C.DIM
+    hexBox.Text                  = toHex(color)
+    hexBox.TextXAlignment        = Enum.TextXAlignment.Center
+    hexBox.ClearTextOnFocus      = false
+    hexBox.ZIndex                = C.Z_CONTENT + 1
+    hexBox.Parent                = panel
+    _corner(hexBox); _stroke(hexBox, C.BORDER)
+
+    local function applyColor(c)
+        color    = c
+        hue, sat, val = toHSV(c)
+        swatch.BackgroundColor3 = c
+        hexLbl.Text             = "#" .. toHex(c)
+        hueCursor.Position      = UDim2.new(hue, 0, 0.5, 0)
+        satCursor.Position      = UDim2.new(sat, 0, 0.5, 0)
+        valCursor.Position      = UDim2.new(val, 0, 0.5, 0)
+        satGrad.Color           = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, 1, 1)),
+        })
+        valGrad.Color           = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV(hue, sat, 1)),
+        })
+        StateManager.set(key, c)
+        if cfg.onChange then Library:SafeCall(cfg.onChange, c) end
+    end
+
+    -- Bar drag logic
+    local function _barDrag(bar, cursor, onChange)
+        local dragging = false
+        bar.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1
+            or i.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+            end
+        end)
+        Library:_trackConnection(UserInputService.InputChanged:Connect(function(i)
+            if not dragging then return end
+            local pct = math.clamp(
+                (i.Position.X - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
+            cursor.Position = UDim2.new(pct, 0, 0.5, 0)
+            onChange(pct)
+        end))
+        Library:_trackConnection(UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1
+            or i.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end))
+    end
+
+    _barDrag(hueFrame, hueCursor, function(pct)
+        hue = pct
+        applyColor(fromHSV(hue, sat, val))
+    end)
+    _barDrag(satFrame, satCursor, function(pct)
+        sat = pct
+        applyColor(fromHSV(hue, sat, val))
+    end)
+    _barDrag(valFrame, valCursor, function(pct)
+        val = pct
+        applyColor(fromHSV(hue, sat, val))
+    end)
+
+    hexBox.FocusLost:Connect(function()
+        local hex = hexBox.Text:gsub("#", "")
+        if #hex == 6 then
+            local r = tonumber(hex:sub(1, 2), 16)
+            local g = tonumber(hex:sub(3, 4), 16)
+            local b = tonumber(hex:sub(5, 6), 16)
+            if r and g and b then
+                applyColor(Color3.fromRGB(r, g, b))
+            end
+        end
+        hexBox.Text = toHex(color)
+    end)
+
+    -- Toggle expand
+    local function togglePanel()
+        expanded = not expanded
+        TweenService:Create(panel, C.T_MED, {
+            Size = UDim2.new(1, 0, 0, expanded and PANEL_H or 0)
+        }):Play()
+        TweenService:Create(rowStroke, C.T_FAST, {
+            Color = expanded and C.ACCENT or C.BORDER
+        }):Play()
+    end
+
+    row.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            togglePanel()
+        end
+    end)
+
+    if cfg.tooltip then _attachTooltip(row, cfg.tooltip) end
+
+    return row
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- E. SEPARATOR + LABEL COMPONENTS
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    { type = "separator", label = "Advanced" }  -- optional label
+    { type = "label",     text  = "This modifies FOV. Requires restart." }
+]]
+
+local function _makeSeparator(parent, cfg)
+    local row = _frame(parent, UDim2.new(1, 0, 0, 20), nil, C.BASE)
+    row.BackgroundTransparency = 1
+
+    if cfg.label and cfg.label ~= "" then
+        local lbl = _label(row, string.upper(cfg.label), C.F_MONO, 9, C.BORDER)
+        lbl.AnchorPoint    = Vector2.new(0.5, 0.5)
+        lbl.Position       = UDim2.fromScale(0.5, 0.5)
+        lbl.Size           = UDim2.fromOffset(0, 0)
+        lbl.AutomaticSize  = Enum.AutomaticSize.XY
+        lbl.BackgroundColor3 = C.BASE
+        lbl.BackgroundTransparency = 0
+        lbl.ZIndex         = C.Z_CONTENT + 1
+
+        local lp = Instance.new("UIPadding")
+        lp.PaddingLeft  = UDim.new(0, 4)
+        lp.PaddingRight = UDim.new(0, 4)
+        lp.Parent = lbl
+    end
+
+    local line = _frame(row, UDim2.new(1, 0, 0, 1), nil, C.BORDER)
+    line.AnchorPoint = Vector2.new(0, 0.5)
+    line.Position    = UDim2.fromScale(0, 0.5)
+
+    return row
+end
+
+local function _makeLabel(parent, cfg)
+    local row = _frame(parent, UDim2.new(1, 0, 0, 0), nil, C.RAIL)
+    row.AutomaticSize = Enum.AutomaticSize.Y
+    _corner(row); _stroke(row, C.BORDER)
+    _padding(row, 10)
+
+    local icon = IconService.get("info", 12)
+    icon.AnchorPoint = Vector2.new(0, 0)
+    icon.Position    = UDim2.fromOffset(0, 2)
+    icon.ZIndex      = C.Z_CONTENT + 1
+    icon.Parent      = row
+
+    local lbl = _label(row, cfg.text or cfg.label or "", C.F_MONO, 10, C.DIM)
+    lbl.Size         = UDim2.new(1, -20, 0, 0)
+    lbl.Position     = UDim2.fromOffset(20, 0)
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
+    lbl.TextWrapped  = true
+    lbl.LineHeight   = 1.4
+
+    return row
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- F. NOTIFICATION QUEUE (fixes the stacking bug in section 5.5)
+-- ─────────────────────────────────────────────────────────────────
+
+local NotificationQueue = {}
+local _nqList     = {}       -- {frame, height}
+local NQ_GAP      = 6
+local NQ_W        = 290
+local NQ_BASE_H   = 56
+local NQ_MARGIN_R = 12
+local NQ_MARGIN_B = 12
+
+local function _nqReflow()
+    local curY = NQ_MARGIN_B
+    for i = #_nqList, 1, -1 do
+        local entry = _nqList[i]
+        if entry.frame and entry.frame.Parent then
+            TweenService:Create(entry.frame, C.T_MED, {
+                Position = UDim2.new(1, -(NQ_W + NQ_MARGIN_R), 1, -(curY + entry.height))
+            }):Play()
+            curY = curY + entry.height + NQ_GAP
+        end
+    end
+end
+
+function NotificationQueue.push(title, body, icon, duration)
+    if not Library._gui then return end
+
+    duration = duration or 4
+
+    local h = body and NQ_BASE_H + 18 or NQ_BASE_H
+
+    local frame = _frame(Library._gui, UDim2.fromOffset(NQ_W, h), nil, C.RAIL, C.Z_TOAST)
+    frame.Position = UDim2.new(1, NQ_MARGIN_R, 1, h)  -- off-screen right
+    _corner(frame, C.RADIUS_LG)
+    _stroke(frame, C.BORDER)
+
+    -- Accent bar
+    local bar = _frame(frame, UDim2.new(0, 3, 1, 0), nil, C.ACCENT)
+    bar.Position = UDim2.fromOffset(0, 0)
+    _corner(bar, C.RADIUS_LG)
+
+    -- Icon
+    if icon then
+        local ico = IconService.get(icon, 14)
+        ico.Position = UDim2.fromOffset(14, 10)
+        ico.Parent   = frame
+    end
+
+    local textOffX = icon and 34 or 14
+
+    -- Title
+    local titleLbl = _label(frame, string.upper(title or "SYSTEM"), C.F_BOLD, 11, C.ACCENT)
+    titleLbl.Position = UDim2.fromOffset(textOffX, 10)
+    titleLbl.Size     = UDim2.new(1, -(textOffX + 30), 0, 13)
+
+    -- Body
+    if body then
+        local bodyLbl = _label(frame, body, C.F_LABEL, 11, C.TEXT)
+        bodyLbl.Position   = UDim2.fromOffset(textOffX, 26)
+        bodyLbl.Size       = UDim2.new(1, -(textOffX + 10), 0, 0)
+        bodyLbl.AutomaticSize = Enum.AutomaticSize.Y
+        bodyLbl.TextWrapped = true
+    end
+
+    -- Close button
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size             = UDim2.fromOffset(16, 16)
+    closeBtn.Position         = UDim2.new(1, -22, 0, 8)
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Text             = "×"
+    closeBtn.FontFace         = C.F_BOLD
+    closeBtn.TextSize         = 14
+    closeBtn.TextColor3       = C.DIM
+    closeBtn.ZIndex           = C.Z_TOAST + 1
+    closeBtn.Parent           = frame
+
+    -- Progress bar
+    local prog = _frame(frame, UDim2.new(1, 0, 0, 2), nil, C.ACCENT)
+    prog.Position  = UDim2.new(0, 0, 1, -2)
+    TweenService:Create(prog, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(0, 0, 0, 2)
+    }):Play()
+
+    local entry = { frame = frame, height = h }
+    table.insert(_nqList, entry)
+    _nqReflow()
+
+    local function dismiss()
+        TweenService:Create(frame, C.T_MED, {
+            Position = UDim2.new(1, NQ_MARGIN_R, frame.Position.Y.Scale, frame.Position.Y.Offset)
+        }):Play()
+        task.delay(0.25, function()
+            local idx = table.find(_nqList, entry)
+            if idx then table.remove(_nqList, idx) end
+            if frame and frame.Parent then frame:Destroy() end
+            _nqReflow()
+        end)
+    end
+
+    closeBtn.Activated:Connect(dismiss)
+    task.delay(duration, dismiss)
+
+    return entry
+end
+
+-- Expose on Library
+function Library:Notify(title, body, icon, duration)
+    return NotificationQueue.push(title, body, icon, duration)
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- G. SEARCH BAR (filters section items live)
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Call Library:AddSearch(contentScrollFrame) after building your tabs.
+    The bar is inserted at the top of the content area and filters every
+    TextLabel whose text matches the query as you type.
+]]
+
+function Library:AddSearch(contentFrame)
+    if not contentFrame then
+        self:Log("Error", "AddSearch: no contentFrame provided.")
+        return
+    end
+
+    local searchBg = _frame(contentFrame, UDim2.new(1, 0, 0, 32), nil, C.RAIL)
+    searchBg.LayoutOrder = -999    -- always first
+    _corner(searchBg); _stroke(searchBg, C.BORDER)
+
+    local ico = IconService.get("search", 14)
+    ico.AnchorPoint = Vector2.new(0, 0.5)
+    ico.Position    = UDim2.new(0, 10, 0.5, 0)
+    ico.Parent      = searchBg
+
+    local box = Instance.new("TextBox")
+    box.Size                = UDim2.new(1, -36, 1, 0)
+    box.Position            = UDim2.fromOffset(30, 0)
+    box.BackgroundTransparency = 1
+    box.FontFace            = C.F_LABEL
+    box.TextSize            = 11
+    box.TextColor3          = C.TEXT
+    box.PlaceholderText     = "Search settings..."
+    box.PlaceholderColor3   = C.DIM
+    box.Text                = ""
+    box.TextXAlignment      = Enum.TextXAlignment.Left
+    box.ClearTextOnFocus    = false
+    box.ZIndex              = C.Z_CONTENT + 1
+    box.Parent              = searchBg
+
+    -- Clear button
+    local clrBtn = Instance.new("TextButton")
+    clrBtn.Size              = UDim2.fromOffset(20, 20)
+    clrBtn.AnchorPoint       = Vector2.new(1, 0.5)
+    clrBtn.Position          = UDim2.new(1, -8, 0.5, 0)
+    clrBtn.BackgroundTransparency = 1
+    clrBtn.Text              = "×"
+    clrBtn.FontFace          = C.F_BOLD
+    clrBtn.TextSize          = 14
+    clrBtn.TextColor3        = C.DIM
+    clrBtn.ZIndex            = C.Z_CONTENT + 2
+    clrBtn.Visible           = false
+    clrBtn.Parent            = searchBg
+
+    local function filter(query)
+        local q = query:lower():gsub("%s+", "")
+        clrBtn.Visible = q ~= ""
+
+        for _, tabFrame in ipairs(contentFrame:GetChildren()) do
+            if tabFrame:IsA("Frame") and tabFrame.Visible then
+                for _, section in ipairs(tabFrame:GetChildren()) do
+                    if section:IsA("Frame") then
+                        local sectionMatch = false
+                        for _, row in ipairs(section:GetChildren()) do
+                            if row:IsA("Frame") then
+                                local rowVisible = false
+                                if q == "" then
+                                    rowVisible = true
+                                else
+                                    for _, child in ipairs(row:GetDescendants()) do
+                                        if child:IsA("TextLabel") or child:IsA("TextButton") then
+                                            local t = child.Text:lower():gsub("%s+", "")
+                                            if t:find(q, 1, true) then
+                                                rowVisible = true
+                                                sectionMatch = true
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                                row.Visible = rowVisible
+                            end
+                        end
+                        section.Visible = (q == "") or sectionMatch
+                    end
+                end
+            end
+        end
+    end
+
+    box:GetPropertyChangedSignal("Text"):Connect(function()
+        filter(box.Text)
+    end)
+
+    clrBtn.Activated:Connect(function()
+        box.Text = ""
+        filter("")
+    end)
+
+    box.Focused:Connect(function()
+        TweenService:Create(searchBg:FindFirstChildOfClass("UIStroke"), C.T_FAST, {Color = C.ACCENT}):Play()
+    end)
+    box.FocusLost:Connect(function()
+        TweenService:Create(searchBg:FindFirstChildOfClass("UIStroke"), C.T_FAST, {Color = C.BORDER}):Play()
+    end)
+
+    return searchBg
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- H. KEYBOARD NAVIGATION (Arrow keys switch tabs)
+-- ─────────────────────────────────────────────────────────────────
+
+local KeyboardNav = {}
+
+function KeyboardNav.init(tabList, activateFn)
+    if not tabList or #tabList == 0 then return end
+
+    Library:_trackConnection(UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+
+        local current = nil
+        for i, tab in ipairs(tabList) do
+            if tab.frame and tab.frame.Visible then current = i; break end
+        end
+        if not current then return end
+
+        local next = current
+        if input.KeyCode == Enum.KeyCode.LeftBracket  then next = math.max(1, current - 1)
+        elseif input.KeyCode == Enum.KeyCode.RightBracket then next = math.min(#tabList, current + 1)
+        else return end
+
+        if next ~= current then activateFn(tabList[next]) end
+    end))
+end
+
+Library.KeyboardNav = KeyboardNav
+
+-- ─────────────────────────────────────────────────────────────────
+-- I. PROFILE SWITCHER UI
+-- ─────────────────────────────────────────────────────────────────
+--[[
+    Library:AddProfileSwitcher(parent, slots?)
+    Adds a named save-slot panel above a content area.
+    Default slots: {"Default", "Profile 1", "Profile 2", "Profile 3"}
+]]
+
+function Library:AddProfileSwitcher(parent, slots)
+    slots = slots or {"Default", "Profile 1", "Profile 2", "Profile 3"}
+
+    local container = _frame(parent, UDim2.new(1, 0, 0, 48), nil, C.RAIL)
+    container.LayoutOrder = -998
+    _corner(container); _stroke(container, C.BORDER)
+    _padding(container, 8)
+    _listLayout(container, Enum.FillDirection.Vertical, 4)
+
+    local headerRow = _frame(container, UDim2.new(1, 0, 0, 14), nil, C.RAIL)
+    headerRow.BackgroundTransparency = 1
+    _listLayout(headerRow, Enum.FillDirection.Horizontal, 0)
+
+    _label(headerRow, "PROFILE", C.F_BOLD, 9, C.ACCENT).Size = UDim2.new(0.5, 0, 1, 0)
+
+    -- Save / Load buttons
+    local actionRow = _frame(container, UDim2.new(1, 0, 0, 22), nil, C.RAIL)
+    actionRow.BackgroundTransparency = 1
+    _listLayout(actionRow, Enum.FillDirection.Horizontal, 6, Enum.HorizontalAlignment.Right)
+
+    local function _smallBtn(label, onClick)
+        local btn = Instance.new("TextButton")
+        btn.Size             = UDim2.fromOffset(52, 20)
+        btn.BackgroundColor3 = C.BASE
+        btn.BorderSizePixel  = 0
+        btn.FontFace         = C.F_MONO
+        btn.TextSize         = 9
+        btn.TextColor3       = C.DIM
+        btn.Text             = label
+        btn.ZIndex           = C.Z_CONTENT + 1
+        btn.Parent           = actionRow
+        _corner(btn, UDim.new(0, 3)); _stroke(btn, C.BORDER)
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, C.T_FAST, {TextColor3 = C.ACCENT}):Play()
+            TweenService:Create(btn:FindFirstChildOfClass("UIStroke"), C.T_FAST, {Color = C.ACCENT}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, C.T_FAST, {TextColor3 = C.DIM}):Play()
+            TweenService:Create(btn:FindFirstChildOfClass("UIStroke"), C.T_FAST, {Color = C.BORDER}):Play()
+        end)
+        btn.Activated:Connect(onClick)
+        return btn
+    end
+
+    -- Slot selector pills
+    local slotRow = _frame(container, UDim2.new(1, 0, 0, 22), nil, C.RAIL)
+    slotRow.BackgroundTransparency = 1
+    _listLayout(slotRow, Enum.FillDirection.Horizontal, 4)
+    container.Size = UDim2.new(1, 0, 0, 74)
+
+    local activeSlot = slots[1]
+    local slotBtns   = {}
+
+    local function _activateSlot(name)
+        activeSlot = name
+        for _, entry in ipairs(slotBtns) do
+            local isMe = entry.name == name
+            TweenService:Create(entry.btn, C.T_FAST, {
+                BackgroundColor3 = isMe and C.ACTIVE_BG or C.BASE
+            }):Play()
+            TweenService:Create(entry.stroke, C.T_FAST, {
+                Color = isMe and C.ACCENT or C.BORDER
+            }):Play()
+            entry.lbl.TextColor3 = isMe and C.ACCENT or C.DIM
+        end
+        self:Log("Info", "Profile: " .. name)
+    end
+
+    for _, slot in ipairs(slots) do
+        local isActive = slot == activeSlot
+        local btn = _frame(slotRow, UDim2.fromOffset(0, 20), nil, isActive and C.ACTIVE_BG or C.BASE)
+        btn.AutomaticSize = Enum.AutomaticSize.X
+        _corner(btn, UDim.new(0, 3))
+        local s = _stroke(btn, isActive and C.ACCENT or C.BORDER)
+        local bp = Instance.new("UIPadding")
+        bp.PaddingLeft   = UDim.new(0, 8)
+        bp.PaddingRight  = UDim.new(0, 8)
+        bp.Parent = btn
+        local l = _label(btn, slot, C.F_MONO, 9, isActive and C.ACCENT or C.DIM)
+        l.AutomaticSize  = Enum.AutomaticSize.XY
+        l.Size           = UDim2.fromOffset(0, 20)
+        l.TextYAlignment = Enum.TextYAlignment.Center
+
+        table.insert(slotBtns, {name = slot, btn = btn, stroke = s, lbl = l})
+        btn.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                _activateSlot(slot)
+            end
+        end)
+    end
+
+    _smallBtn("💾 SAVE", function()
+        local filename = string.format("claudeui_%s_%d.json",
+            activeSlot:lower():gsub("%s+", "_"), game.PlaceId)
+        self:Save(filename)
+        NotificationQueue.push("Saved", "Profile '" .. activeSlot .. "' saved.", "save", 3)
+    end)
+
+    _smallBtn("📂 LOAD", function()
+        local filename = string.format("claudeui_%s_%d.json",
+            activeSlot:lower():gsub("%s+", "_"), game.PlaceId)
+        self:Load(filename, self._config)
+        NotificationQueue.push("Loaded", "Profile '" .. activeSlot .. "' loaded.", "upload", 3)
+    end)
+
+    return container
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- J. WIRE NEW TYPES INTO AddSection VALIDATOR + DISPATCH
+-- ─────────────────────────────────────────────────────────────────
+
+-- Extend _VALID_RULES (these are module-local in the original file,
+-- so we patch them here via the same table reference)
+_VALID_RULES["button"]      = { label="string", onClick="function" }
+_VALID_RULES["dropdown"]    = { label="string", options="table",   onChange="function" }
+_VALID_RULES["textinput"]   = { label="string", default="string",  onChange="function", onSubmit="function" }
+_VALID_RULES["colorpicker"] = { label="string", onChange="function" }
+_VALID_RULES["separator"]   = {}
+_VALID_RULES["label"]       = {}
+
+-- Wrap the original AddSection to handle the new types
+local _originalAddSection = Library.AddSection
+
+function Library:AddSection(parent, title, items)
+    -- Let original handle toggle / slider / keybind
+    local group = _originalAddSection(self, parent, title, items)
+
+    -- Handle new types that original ignores
+    for _, item in ipairs(items or {}) do
+        local t = item.type
+        if     t == "button"      then _makeButton(group,       item)
+        elseif t == "dropdown"    then _makeDropdown(group,     item)
+        elseif t == "textinput"   then _makeTextInput(group,    item)
+        elseif t == "colorpicker" then _makeColorPicker(group,  item)
+        elseif t == "separator"   then _makeSeparator(group,    item)
+        elseif t == "label"       then _makeLabel(group,        item)
+        end
+    end
+
+    return group
+end
+
+-- ─────────────────────────────────────────────────────────────────
+-- K. EXPOSE NEW SUBSYSTEMS ON LIBRARY
+-- ─────────────────────────────────────────────────────────────────
+
+Library.NotificationQueue = NotificationQueue
+Library.KeyboardNav       = KeyboardNav
+
+-- ─────────────────────────────────────────────────────────────────
+-- USAGE EXAMPLE (all new components)
+-- ─────────────────────────────────────────────────────────────────
+--[[
 
 local ClaudeUI = loadstring(game:HttpGet("..."))()
 
--- 1. Create tabs before building window
 local combatTab  = ClaudeUI:AddTab("Combat",  "crosshair")
 local visualsTab = ClaudeUI:AddTab("Visuals", "eye")
 local miscTab    = ClaudeUI:AddTab("Misc",    "settings")
 
--- 2. Init window
-ClaudeUI.new({
-    title  = "ClaudeUI",
-    debug  = false,
-    blur   = false,
-})
+ClaudeUI.new({ title = "ClaudeUI", debug = false })
 
--- 3. Add sections
-ClaudeUI:AddSection(combatTab.frame, "Aimbot", {
+-- ── Profile switcher at the top ──────────────────────────────────
+ClaudeUI:AddProfileSwitcher(combatTab.frame)
+
+-- ── Search bar (on any content frame) ───────────────────────────
+ClaudeUI:AddSearch(ClaudeUI._contentFrame)
+
+-- ── Keyboard nav  [ and ] to switch tabs ────────────────────────
+-- (wire up inside _buildWindow, or call manually:)
+-- ClaudeUI.KeyboardNav.init(ClaudeUI._tabs, myActivateFn)
+
+-- ── All new components in one section ───────────────────────────
+ClaudeUI:AddSection(combatTab.frame, "Targeting", {
     {
-        type     = "toggle",
-        label    = "Enabled",
-        subLabel = "Master aimbot switch",
-        default  = false,
-        tooltip  = "Enables aim assistance. Use responsibly.",
-        featureId = "aimbot_enabled",
-        onChange  = function(v) print("Aimbot:", v) end,
+        type     = "dropdown",
+        label    = "Target Bone",
+        options  = {"Head", "Neck", "Chest", "Pelvis", "Closest"},
+        default  = "Head",
+        tooltip  = "Which hitbox to aim at",
+        onChange = function(v) print("Bone:", v) end,
     },
     {
-        type    = "slider",
-        label   = "FOV",
-        subLabel = "Detection radius",
-        min     = 10, max = 360, default = 120,
-        suffix  = "°",
-        onChange = function(v) print("FOV:", v) end,
+        type        = "textinput",
+        label       = "Whitelist Player",
+        placeholder = "username",
+        maxLength   = 30,
+        tooltip     = "Exact Roblox display name",
+        validator   = function(t) return #t >= 3 and #t <= 20 end,
+        onSubmit    = function(v) print("Whitelisted:", v) end,
+    },
+    { type = "separator", label = "Visuals" },
+    {
+        type     = "colorpicker",
+        label    = "ESP Color",
+        default  = Color3.fromRGB(232, 93, 0),
+        tooltip  = "Color used for ESP boxes",
+        onChange = function(c) print("Color:", c) end,
     },
     {
-        type  = "keybind",
-        label = "Toggle Key",
-        key   = Enum.KeyCode.X,
-        mode  = "Toggle",
-        onChange = function(v) print("Keybind active:", v) end,
+        type    = "button",
+        label   = "Teleport to Waypoint",
+        subLabel = "Moves your character instantly",
+        icon    = "zap",
+        style   = "accent",
+        tooltip = "Requires a valid waypoint to be set",
+        onClick = function() print("Teleporting...") end,
+    },
+    {
+        type   = "label",
+        text   = "Aimbot applies only while the keybind is held. FOV circles are client-side only.",
+    },
+    {
+        type  = "button",
+        label = "Reset All Settings",
+        icon  = "refresh",
+        style = "danger",
+        onClick = function()
+            ClaudeUI:AutoLoad({})
+            ClaudeUI:Notify("Reset", "All settings restored to default.", "refresh", 3)
+        end,
     },
 })
 
--- 4. Live pill ticker
-ClaudeUI.Pill.setTicker({"AIMBOT: OFF", "FOV: 120", "v1.0.0"}, 2.5)
+-- ── Notification demo ────────────────────────────────────────────
+ClaudeUI:Notify("Connected", "ClaudeUI loaded successfully.", "success", 4)
+ClaudeUI:Notify("Warning",   "HttpService is disabled.",      "warning", 5)
 
--- 5. Debug mode
-ClaudeUI:SetDebug(true)
-
--- 6. Plugin example
-ClaudeUI.Plugins.register({
-    name    = "MyPlugin",
-    version = "1.0",
-    onLoad  = function(lib)
-        local myTab = lib:AddTab("Plugin", "plugin")
-        lib:AddSection(myTab.frame, "Custom", {
-            { type="toggle", label="My Feature", default=false }
-        })
-    end,
-})
-
--- 7. Cleanup
-ClaudeUI:Destroy()
 ]]
+
+return Library
