@@ -2472,24 +2472,33 @@ local function _makeButton(parent, cfg)
     if cfg.icon then
         local ico = IconService.get(cfg.icon, 14)
         ico.AnchorPoint = Vector2.new(0, 0.5)
-        ico.Position    = UDim2.new(0, 0, 0.5, 0)
+        ico.Position    = UDim2.new(0, 0, 0.5, 0) -- Perfectly centered icon
         ico.ZIndex      = C.Z_CONTENT + 1
+        ico.ImageColor3 = C.TEXT -- Brightens the icon to match text
         ico.Parent      = row
     end
 
-    local labelOffX = cfg.icon and 20 or 0
+    local labelOffX = cfg.icon and 24 or 0 -- Increased offset slightly for breathing room
 
+    -- MAIN LABEL FIX
     local lbl = _label(row, cfg.label, C.F_MEDIUM, 11, C.TEXT)
-    lbl.Size     = UDim2.new(0.75, -labelOffX, 0, 14)
-    lbl.Position = UDim2.fromOffset(labelOffX, cfg.subLabel and 8 or 0)
+    lbl.Size = UDim2.new(0.75, -labelOffX, 0, 14)
+    lbl.AnchorPoint = Vector2.new(0, 0.5) -- Locks the "handle" to the middle of the text
+    
+    -- If there's a sublabel, we nudge the title UP by 8 pixels from the center. 
+    -- If no sublabel, it stays at 0 (dead center).
+    lbl.Position = UDim2.new(0, labelOffX, 0.5, cfg.subLabel and -8 or 0)
 
+    -- SUBLABEL FIX
     if cfg.subLabel then
         local sub = _label(row, cfg.subLabel, C.F_MONO, 10, C.DIM)
-        sub.Size     = UDim2.new(0.75, -labelOffX, 0, 12)
-        sub.Position = UDim2.fromOffset(labelOffX, 26)
+        sub.Size = UDim2.new(0.75, -labelOffX, 0, 12)
+        sub.AnchorPoint = Vector2.new(0, 0.5)
+        -- Nudges the sublabel DOWN by 8 pixels from the center
+        sub.Position = UDim2.new(0, labelOffX, 0.5, 10) 
     end
 
-    -- Arrow indicator on the right
+    -- Arrow indicator (already centered)
     local arrow = _label(row, "→", C.F_BOLD, 14,
         accentColor == C.BORDER and C.DIM or accentColor)
     arrow.AnchorPoint    = Vector2.new(1, 0.5)
@@ -2497,7 +2506,7 @@ local function _makeButton(parent, cfg)
     arrow.Position       = UDim2.new(1, 0, 0.5, 0)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
 
-    -- Hover
+    -- Hover & Press Logic (Same as your code)
     row.MouseEnter:Connect(function()
         TweenService:Create(row,       C.T_FAST, {BackgroundColor3 = C.ACTIVE_BG}):Play()
         TweenService:Create(rowStroke, C.T_FAST, {Color = C.ACCENT}):Play()
@@ -2511,7 +2520,6 @@ local function _makeButton(parent, cfg)
         TweenService:Create(lbl,       C.T_FAST, {TextColor3 = C.TEXT}):Play()
     end)
 
-    -- Press flash
     row.InputBegan:Connect(_debounce("btn_" .. (cfg.featureId or cfg.label), function(input)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1
         and input.UserInputType ~= Enum.UserInputType.Touch then return end
@@ -2527,12 +2535,6 @@ local function _makeButton(parent, cfg)
     end))
 
     if cfg.tooltip  then _attachTooltip(row, cfg.tooltip) end
-    if cfg.featureId then
-        _attachContextMenu(row, cfg.featureId, function()
-            -- buttons have no resettable state
-        end)
-    end
-
     return row
 end
 
