@@ -520,53 +520,60 @@ end
 -- ─────────────────────────────────────────────────────────────────
 local IconService = {}
 local ICON_ASSET_ID = "rbxassetid://97757682409962"
-local CELL = 32 -- The size that worked in your test script
+local CELL = 32 -- Verified by your test script
 
 local FALLBACK_MAP = {
     -- ROW 1
-    ["arrow-down"] = {0*CELL, 0*CELL}, ["arrow-left"] = {1*CELL, 0*CELL}, ["arrow-right"] = {2*CELL, 0*CELL}, 
-    ["arrow-up"] = {3*CELL, 0*CELL}, ["back"] = {4*CELL, 0*CELL}, ["button-ghost"] = {5*CELL, 0*CELL},
-    ["bell-off"] = {6*CELL, 0*CELL}, ["bell"] = {7*CELL, 0*CELL}, ["brain"] = {8*CELL, 0*CELL}, ["branch"] = {9*CELL, 0*CELL},
+    ["arrow-down"] = {0*CELL, 0*CELL}, ["arrow-left"] = {1*CELL, 0*CELL}, ["arrow-right"] = {2*CELL, 0*CELL}, ["arrow-up"] = {3*CELL, 0*CELL},
+    ["back"] = {4*CELL, 0*CELL}, ["return"] = {4*CELL, 0*CELL}, ["home"] = {5*CELL, 0*CELL}, ["bell-off"] = {6*CELL, 0*CELL}, 
+    ["bell"] = {7*CELL, 0*CELL}, ["brain"] = {8*CELL, 0*CELL}, ["branch"] = {9*CELL, 0*CELL},
 
     -- ROW 2
     ["bug"] = {0*CELL, 1*CELL}, ["input"] = {1*CELL, 1*CELL}, ["button"] = {2*CELL, 1*CELL}, ["calendar"] = {3*CELL, 1*CELL},
-    ["card"] = {4*CELL, 1*CELL}, ["checkbox-checked"] = {5*CELL, 1*CELL}, ["checkbox-empty"] = {6*CELL, 1*CELL}, 
-    ["checkbox-indeterminate"] = {7*CELL, 1*CELL}, ["chip"] = {8*CELL, 1*CELL}, ["close"] = {9*CELL, 1*CELL},
+    ["card"] = {4*CELL, 1*CELL}, ["checkbox-checked"] = {5*CELL, 1*CELL}, ["check"] = {5*CELL, 1*CELL}, ["checkbox-empty"] = {6*CELL, 1*CELL}, 
+    ["minus"] = {7*CELL, 1*CELL}, ["chip"] = {8*CELL, 1*CELL}, ["close"] = {9*CELL, 1*CELL}, ["x"] = {9*CELL, 1*CELL},
 
     -- ROW 3
-    ["code"] = {0*CELL, 2*CELL}, ["commit"] = {1*CELL, 2*CELL}, ["crosshair"] = {2*CELL, 2*CELL}, ["file-text"] = {3*CELL, 2*CELL},
-    ["terminal"] = {4*CELL, 2*CELL}, ["download"] = {5*CELL, 2*CELL}, ["dropdown"] = {6*CELL, 2*CELL}, ["edit"] = {7*CELL, 2*CELL},
-    ["error"] = {8*CELL, 2*CELL}, ["external-link"] = {9*CELL, 2*CELL},
+    ["code"] = {0*CELL, 2*CELL}, ["terminal"] = {0*CELL, 2*CELL}, ["dot"] = {1*CELL, 2*CELL}, ["crosshair"] = {2*CELL, 2*CELL}, 
+    ["aim"] = {2*CELL, 2*CELL}, ["target"] = {2*CELL, 2*CELL}, ["file-text"] = {3*CELL, 2*CELL}, ["prompt"] = {4*CELL, 2*CELL}, 
+    ["download"] = {5*CELL, 2*CELL}, ["dropdown"] = {6*CELL, 2*CELL}, ["edit"] = {7*CELL, 2*CELL}, ["error"] = {8*CELL, 2*CELL}, 
+    ["external-link"] = {9*CELL, 2*CELL},
 
     -- ROW 4
-    ["eye-off"] = {0*CELL, 3*CELL}, ["eye"] = {1*CELL, 3*CELL}, ["file-code"] = {2*CELL, 3*CELL}, ["file"] = {4*CELL, 3*CELL},
-    ["filter"] = {5*CELL, 3*CELL}, ["folder-open"] = {6*CELL, 3*CELL}, ["folder"] = {7*CELL, 3*CELL}, ["forward"] = {8*CELL, 3*CELL},
-    ["grid"] = {9*CELL, 3*CELL},
+    ["eye-off"] = {0*CELL, 3*CELL}, ["eye"] = {1*CELL, 3*CELL}, ["visuals"] = {1*CELL, 3*CELL}, ["esp"] = {1*CELL, 3*CELL},
+    ["file-code"] = {2*CELL, 3*CELL}, ["file-alt"] = {3*CELL, 3*CELL}, ["file"] = {4*CELL, 3*CELL}, ["filter"] = {5*CELL, 3*CELL}, 
+    ["folder-open"] = {6*CELL, 3*CELL}, ["folder"] = {7*CELL, 3*CELL}, ["forward"] = {8*CELL, 3*CELL}, ["grid"] = {9*CELL, 3*CELL},
 
     -- ROW 5
-    ["heart"] = {0*CELL, 4*CELL}, ["home"] = {1*CELL, 4*CELL}, ["info"] = {2*CELL, 4*CELL}, ["link"] = {4*CELL, 4*CELL},
+    ["heart"] = {0*CELL, 4*CELL}, ["house"] = {1*CELL, 4*CELL}, ["info"] = {2*CELL, 4*CELL}, ["link"] = {4*CELL, 4*CELL},
     ["list"] = {5*CELL, 4*CELL}, ["loading"] = {6*CELL, 4*CELL}, ["lock"] = {7*CELL, 4*CELL}, ["star"] = {8*CELL, 4*CELL},
     ["menu"] = {9*CELL, 4*CELL},
 
     -- ROW 6
-    ["message"] = {0*CELL, 5*CELL}, ["minus"] = {1*CELL, 5*CELL}, ["notification"] = {3*CELL, 5*CELL}, ["panel"] = {4*CELL, 5*CELL},
-    ["paste"] = {5*CELL, 5*CELL}, ["plus"] = {6*CELL, 5*CELL}, ["power"] = {7*CELL, 5*CELL}, ["radio-off"] = {8*CELL, 5*CELL},
-    ["radio-on"] = {9*CELL, 5*CELL},
+    ["message"] = {0*CELL, 5*CELL}, ["hyphen"] = {1*CELL, 5*CELL}, ["tab"] = {2*CELL, 5*CELL}, ["notification"] = {3*CELL, 5*CELL}, 
+    ["panel"] = {4*CELL, 5*CELL}, ["paste"] = {5*CELL, 5*CELL}, ["plus"] = {6*CELL, 5*CELL}, ["power"] = {7*CELL, 5*CELL}, 
+    ["radio-off"] = {8*CELL, 5*CELL}, ["radio-on"] = {9*CELL, 5*CELL},
 
     -- ROW 7
     ["redo"] = {0*CELL, 6*CELL}, ["refresh"] = {1*CELL, 6*CELL}, ["robot"] = {2*CELL, 6*CELL}, ["save"] = {3*CELL, 6*CELL},
-    ["search"] = {4*CELL, 6*CELL}, ["settings"] = {5*CELL, 6*CELL}, ["share"] = {6*CELL, 6*CELL}, ["slider-h"] = {7*CELL, 6*CELL},
-    ["slider"] = {8*CELL, 6*CELL}, ["sort"] = {9*CELL, 6*CELL},
+    ["search"] = {4*CELL, 6*CELL}, ["settings"] = {5*CELL, 6*CELL}, ["config"] = {5*CELL, 6*CELL}, ["share"] = {6*CELL, 6*CELL}, 
+    ["slider-h"] = {7*CELL, 6*CELL}, ["slider"] = {8*CELL, 6*CELL}, ["sort"] = {9*CELL, 6*CELL},
 
     -- ROW 8
-    ["spinner-ring"] = {0*CELL, 7*CELL}, ["success"] = {2*CELL, 7*CELL}, ["tabs"] = {3*CELL, 7*CELL}, ["thinking"] = {5*CELL, 7*CELL},
-    ["time"] = {6*CELL, 7*CELL}, ["toggle-off"] = {7*CELL, 7*CELL}, ["toggle-on"] = {8*CELL, 7*CELL},
+    ["spinner"] = {0*CELL, 7*CELL}, ["success"] = {2*CELL, 7*CELL}, ["tabs"] = {3*CELL, 7*CELL}, ["plugin"] = {4*CELL, 7*CELL},
+    ["thinking"] = {5*CELL, 7*CELL}, ["time"] = {6*CELL, 7*CELL}, ["toggle-off"] = {7*CELL, 7*CELL}, ["toggle-on"] = {8*CELL, 7*CELL},
+    ["message-alt"] = {9*CELL, 7*CELL},
 
     -- ROW 9
     ["trash"] = {0*CELL, 8*CELL}, ["undo"] = {1*CELL, 8*CELL}, ["unlock"] = {2*CELL, 8*CELL}, ["upload"] = {3*CELL, 8*CELL},
     ["user"] = {4*CELL, 8*CELL}, ["users"] = {5*CELL, 8*CELL}, ["variable"] = {6*CELL, 8*CELL}, ["warning"] = {7*CELL, 8*CELL},
-    ["window"] = {8*CELL, 8*CELL}, ["zap"] = {9*CELL, 8*CELL}
+    ["window"] = {8*CELL, 8*CELL}, ["zap"] = {9*CELL, 8*CELL}, ["misc"] = {9*CELL, 8*CELL}
 }
+
+-- Ensure unknown icons default to arrow-down instead of being invisible
+setmetatable(FALLBACK_MAP, {
+    __index = function() return {0, 0} end
+})
 
 -- ALIASES (Mapping old names to your new orange icons)
 FALLBACK_MAP["aim"] = FALLBACK_MAP["crosshair"]
@@ -580,19 +587,19 @@ FALLBACK_MAP["lightning"] = FALLBACK_MAP["zap"]
 
 function IconService.get(name)
     local coords = FALLBACK_MAP[name] or {0, 0}
-
+    
     local img = Instance.new("ImageLabel")
-    img.Name = "CUI_Icon"
-    img.Size = UDim2.fromOffset(24, 24)
+    img.Name = "CUI_Icon_" .. tostring(name)
+    img.Size = UDim2.fromOffset(20, 20) -- Icon display size
     img.BackgroundTransparency = 1
     img.Image = "rbxassetid://97757682409962"
     
-    -- Correct 32px window size
-    img.ImageRectSize = Vector2.new(32, 32) 
+    -- This MUST match your test script's working size
+    img.ImageRectSize = Vector2.new(CELL, CELL) 
     img.ImageRectOffset = Vector2.new(coords[1], coords[2])
     
-    img.ImageColor3 = Color3.new(1, 1, 1)
-    img.ZIndex = 15
+    img.ImageColor3 = Color3.new(1, 1, 1) -- Keep white to show your orange colors
+    img.ZIndex = 20
     
     return img
 end
