@@ -102,7 +102,7 @@ local C = {
     Z_SYSTEM     = 200,
 
     -- Version & GitHub Sync
-    VERSION      = "1.0.5",
+    VERSION      = "1.0.6",
     VERSION_URL  = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/versions.txt",
     MAP_URL      = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/spritesheet/spritesheet-map.json",
     REPO_URL     = "https://github.com/Damix-hash/ClaudeUI",
@@ -581,8 +581,10 @@ local ICON_MAP = {
     ["card"]            = {4*CELL, 1*CELL},
     ["checkbox-on"]     = {5*CELL, 1*CELL},
     ["checkbox-off"]    = {6*CELL, 1*CELL},
-    ["minus"]           = {7*CELL, 1*CELL},
-    ["close"]           = {8*CELL, 1*CELL},
+    -- ROW 1 Fixes
+    ["minus"]  = {7*CELL, 1*CELL}, -- The small dash
+    ["close"]  = {9*CELL, 1*CELL}, -- The ACTUAL X (Column 10, index 9)
+    ["x"]      = {9*CELL, 1*CELL}, -- Alias for X
  
     -- ROW 2
     ["code"]            = {0*CELL, 2*CELL},
