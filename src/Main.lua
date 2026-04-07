@@ -565,25 +565,16 @@ end)
 
 -- 3. The "Get" function that NEVER returns nil
 function IconService.get(name)
-    local coords = {0, 0}
-    
-    -- Safety check: Try LiveMap first, then Fallback, then {0,0}
-    if LiveMap and LiveMap[name] then
-        coords = {LiveMap[name].x, LiveMap[name].y}
-    elseif FALLBACK_MAP[name] then
-        coords = FALLBACK_MAP[name]
-    end
-
     local img = Instance.new("ImageLabel")
     img.Name = "CUI_Icon"
     img.Size = UDim2.fromOffset(24, 24)
     img.BackgroundTransparency = 1
     img.Image = ICON_ASSET_ID
-    img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
-    img.ImageRectOffset = Vector2.new(coords[1], coords[2])
-    img.ImageColor3 = Color3.new(1, 1, 1) -- Shows your orange/white art
-    img.ZIndex = C.Z_CONTENT or 20
-    
+    img.ImageColor3 = Color3.new(1, 1, 1)
+    img.ZIndex = 25 -- Force it to the front
+    -- Comment out these two lines to see the full sheet:
+    -- img.ImageRectSize = Vector2.new(ICON_CELL, ICON_CELL)
+    -- img.ImageRectOffset = Vector2.new(0, 0) 
     return img
 end
 
