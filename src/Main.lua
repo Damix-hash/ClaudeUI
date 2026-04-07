@@ -110,7 +110,7 @@ local C = {
     -- Config
     SCHEMA_VER   = 1,
     MAX_HISTORY  = 10,
-    MEMORY_WARN  = 50,   -- MB
+    MEMORY_WARN  = 125,   -- MB
     SPAM_LIMIT   = 10,
     SPAM_WINDOW  = 1,    -- seconds
     LOCKOUT_TIME = 2,    -- seconds
