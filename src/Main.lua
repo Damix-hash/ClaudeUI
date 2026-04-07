@@ -102,7 +102,7 @@ local C = {
     Z_SYSTEM     = 200,
 
     -- Version & GitHub Sync
-    VERSION      = "1.0.4",
+    VERSION      = "1.0.5",
     VERSION_URL  = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/versions.txt",
     MAP_URL      = "https://raw.githubusercontent.com/Damix-hash/ClaudeUI/main/spritesheet/spritesheet-map.json",
     REPO_URL     = "https://github.com/Damix-hash/ClaudeUI",
@@ -518,93 +518,334 @@ end
 -- ─────────────────────────────────────────────────────────────────
 -- 6. ICON SERVICE
 -- ─────────────────────────────────────────────────────────────────
+
+--[[
+    IconService for ClaudeUI
+    Spritesheet: rbxassetid://97757682409962
+    Grid: 9 columns × 10 rows, each cell 32×32px
+    Sheet size: 288×320px
+    
+    HOW TO USE:
+        local icon = IconService.get("crosshair")
+        icon.Parent = someFrame
+    
+    HOW TO TEST A SINGLE ICON:
+        -- Paste in Studio command bar:
+        local img = Instance.new("ImageLabel")
+        img.Size = UDim2.fromOffset(64, 64)
+        img.Image = "rbxassetid://97757682409962"
+        img.ImageRectSize = Vector2.new(32, 32)
+        img.ImageRectOffset = Vector2.new(64, 64)  -- crosshair: col 2, row 2
+        img.BackgroundColor3 = Color3.fromHex("1C1C1C")
+        img.Parent = game.Players.LocalPlayer.PlayerGui
+]]
+ 
 local IconService = {}
-local ICON_ASSET_ID = "rbxassetid://97757682409962"
-local CELL = 32 -- Verified by your test script
-
-local FALLBACK_MAP = {
+ 
+local ASSET_ID = "rbxassetid://97757682409962"
+local CELL     = 32   -- each icon cell is 32×32 pixels
+ 
+--[[
+    ICON MAP
+    Format: name = {col * CELL, row * CELL}  (0-indexed)
+    
+    Row 0: arrow-left  arrow-right  arrow-up  arrow-back  badge      bell-off  bell      brain     branch
+    Row 1: bug         input        button    calendar    card       check-on  check-off minus     close
+    Row 2: code        dot          crosshair file-text   prompt     download  dropdown  edit      external-link
+    Row 3: eye-off     eye          file-code file-alt    file       filter    folder-open folder  forward
+    Row 4: heart       home         info      card-alt    link       panel     lock      star      menu
+    Row 5: message     hyphen       notif-dot notification plus      power     radio-off radio-on  list
+    Row 6: redo        refresh      robot     save        search     settings  share     slider-h  sort
+    Row 7: star-filled success      terminal  tabs        thinking   time      toggle-off toggle-on message-alt
+    Row 8: trash       reload       unlock    upload      user       users     variable  warning   zap
+    Row 9: (empty row — sheet ends at row 8 for 9×9=90 icons, last row has 9 icons)
+]]
+ 
+local ICON_MAP = {
+    -- ROW 0
+    ["arrow-left"]      = {0*CELL, 0*CELL},
+    ["arrow-right"]     = {1*CELL, 0*CELL},
+    ["arrow-up"]        = {2*CELL, 0*CELL},
+    ["arrow-back"]      = {3*CELL, 0*CELL},
+    ["badge"]           = {4*CELL, 0*CELL},
+    ["bell-off"]        = {5*CELL, 0*CELL},
+    ["bell"]            = {6*CELL, 0*CELL},
+    ["brain"]           = {7*CELL, 0*CELL},
+    ["branch"]          = {8*CELL, 0*CELL},
+ 
     -- ROW 1
-    ["arrow-down"] = {0*CELL, 0*CELL}, ["arrow-left"] = {1*CELL, 0*CELL}, ["arrow-right"] = {2*CELL, 0*CELL}, ["arrow-up"] = {3*CELL, 0*CELL},
-    ["back"] = {4*CELL, 0*CELL}, ["return"] = {4*CELL, 0*CELL}, ["home"] = {5*CELL, 0*CELL}, ["bell-off"] = {6*CELL, 0*CELL}, 
-    ["bell"] = {7*CELL, 0*CELL}, ["brain"] = {8*CELL, 0*CELL}, ["branch"] = {9*CELL, 0*CELL},
-
+    ["bug"]             = {0*CELL, 1*CELL},
+    ["input"]           = {1*CELL, 1*CELL},
+    ["button"]          = {2*CELL, 1*CELL},
+    ["calendar"]        = {3*CELL, 1*CELL},
+    ["card"]            = {4*CELL, 1*CELL},
+    ["checkbox-on"]     = {5*CELL, 1*CELL},
+    ["checkbox-off"]    = {6*CELL, 1*CELL},
+    ["minus"]           = {7*CELL, 1*CELL},
+    ["close"]           = {8*CELL, 1*CELL},
+ 
     -- ROW 2
-    ["bug"] = {0*CELL, 1*CELL}, ["input"] = {1*CELL, 1*CELL}, ["button"] = {2*CELL, 1*CELL}, ["calendar"] = {3*CELL, 1*CELL},
-    ["card"] = {4*CELL, 1*CELL}, ["checkbox-checked"] = {5*CELL, 1*CELL}, ["check"] = {5*CELL, 1*CELL}, ["checkbox-empty"] = {6*CELL, 1*CELL}, 
-    ["minus"] = {7*CELL, 1*CELL}, ["chip"] = {8*CELL, 1*CELL}, ["close"] = {9*CELL, 1*CELL}, ["x"] = {9*CELL, 1*CELL},
-
+    ["code"]            = {0*CELL, 2*CELL},
+    ["dot"]             = {1*CELL, 2*CELL},
+    ["crosshair"]       = {2*CELL, 2*CELL},
+    ["file-text"]       = {3*CELL, 2*CELL},
+    ["prompt"]          = {4*CELL, 2*CELL},
+    ["download"]        = {5*CELL, 2*CELL},
+    ["dropdown"]        = {6*CELL, 2*CELL},
+    ["edit"]            = {7*CELL, 2*CELL},
+    ["external-link"]   = {8*CELL, 2*CELL},
+ 
     -- ROW 3
-    ["code"] = {0*CELL, 2*CELL}, ["terminal"] = {0*CELL, 2*CELL}, ["dot"] = {1*CELL, 2*CELL}, ["crosshair"] = {2*CELL, 2*CELL}, 
-    ["aim"] = {2*CELL, 2*CELL}, ["target"] = {2*CELL, 2*CELL}, ["file-text"] = {3*CELL, 2*CELL}, ["prompt"] = {4*CELL, 2*CELL}, 
-    ["download"] = {5*CELL, 2*CELL}, ["dropdown"] = {6*CELL, 2*CELL}, ["edit"] = {7*CELL, 2*CELL}, ["error"] = {8*CELL, 2*CELL}, 
-    ["external-link"] = {9*CELL, 2*CELL},
-
+    ["eye-off"]         = {0*CELL, 3*CELL},
+    ["eye"]             = {1*CELL, 3*CELL},
+    ["file-code"]       = {2*CELL, 3*CELL},
+    ["file-alt"]        = {3*CELL, 3*CELL},
+    ["file"]            = {4*CELL, 3*CELL},
+    ["filter"]          = {5*CELL, 3*CELL},
+    ["folder-open"]     = {6*CELL, 3*CELL},
+    ["folder"]          = {7*CELL, 3*CELL},
+    ["forward"]         = {8*CELL, 3*CELL},
+ 
     -- ROW 4
-    ["eye-off"] = {0*CELL, 3*CELL}, ["eye"] = {1*CELL, 3*CELL}, ["visuals"] = {1*CELL, 3*CELL}, ["esp"] = {1*CELL, 3*CELL},
-    ["file-code"] = {2*CELL, 3*CELL}, ["file-alt"] = {3*CELL, 3*CELL}, ["file"] = {4*CELL, 3*CELL}, ["filter"] = {5*CELL, 3*CELL}, 
-    ["folder-open"] = {6*CELL, 3*CELL}, ["folder"] = {7*CELL, 3*CELL}, ["forward"] = {8*CELL, 3*CELL}, ["grid"] = {9*CELL, 3*CELL},
-
+    ["heart"]           = {0*CELL, 4*CELL},
+    ["home"]            = {1*CELL, 4*CELL},
+    ["info"]            = {2*CELL, 4*CELL},
+    ["card-alt"]        = {3*CELL, 4*CELL},
+    ["link"]            = {4*CELL, 4*CELL},
+    ["panel"]           = {5*CELL, 4*CELL},
+    ["lock"]            = {6*CELL, 4*CELL},
+    ["star"]            = {7*CELL, 4*CELL},
+    ["menu"]            = {8*CELL, 4*CELL},
+ 
     -- ROW 5
-    ["heart"] = {0*CELL, 4*CELL}, ["house"] = {1*CELL, 4*CELL}, ["info"] = {2*CELL, 4*CELL}, ["link"] = {4*CELL, 4*CELL},
-    ["list"] = {5*CELL, 4*CELL}, ["loading"] = {6*CELL, 4*CELL}, ["lock"] = {7*CELL, 4*CELL}, ["star"] = {8*CELL, 4*CELL},
-    ["menu"] = {9*CELL, 4*CELL},
-
+    ["message"]         = {0*CELL, 5*CELL},
+    ["hyphen"]          = {1*CELL, 5*CELL},
+    ["notif-dot"]       = {2*CELL, 5*CELL},
+    ["notification"]    = {3*CELL, 5*CELL},
+    ["plus"]            = {4*CELL, 5*CELL},
+    ["power"]           = {5*CELL, 5*CELL},
+    ["radio-off"]       = {6*CELL, 5*CELL},
+    ["radio-on"]        = {7*CELL, 5*CELL},
+    ["list"]            = {8*CELL, 5*CELL},
+ 
     -- ROW 6
-    ["message"] = {0*CELL, 5*CELL}, ["hyphen"] = {1*CELL, 5*CELL}, ["tab"] = {2*CELL, 5*CELL}, ["notification"] = {3*CELL, 5*CELL}, 
-    ["panel"] = {4*CELL, 5*CELL}, ["paste"] = {5*CELL, 5*CELL}, ["plus"] = {6*CELL, 5*CELL}, ["power"] = {7*CELL, 5*CELL}, 
-    ["radio-off"] = {8*CELL, 5*CELL}, ["radio-on"] = {9*CELL, 5*CELL},
-
+    ["redo"]            = {0*CELL, 6*CELL},
+    ["refresh"]         = {1*CELL, 6*CELL},
+    ["robot"]           = {2*CELL, 6*CELL},
+    ["save"]            = {3*CELL, 6*CELL},
+    ["search"]          = {4*CELL, 6*CELL},
+    ["settings"]        = {5*CELL, 6*CELL},
+    ["share"]           = {6*CELL, 6*CELL},
+    ["slider-h"]        = {7*CELL, 6*CELL},
+    ["sort"]            = {8*CELL, 6*CELL},
+ 
     -- ROW 7
-    ["redo"] = {0*CELL, 6*CELL}, ["refresh"] = {1*CELL, 6*CELL}, ["robot"] = {2*CELL, 6*CELL}, ["save"] = {3*CELL, 6*CELL},
-    ["search"] = {4*CELL, 6*CELL}, ["settings"] = {5*CELL, 6*CELL}, ["config"] = {5*CELL, 6*CELL}, ["share"] = {6*CELL, 6*CELL}, 
-    ["slider-h"] = {7*CELL, 6*CELL}, ["slider"] = {8*CELL, 6*CELL}, ["sort"] = {9*CELL, 6*CELL},
-
+    ["star-filled"]     = {0*CELL, 7*CELL},
+    ["success"]         = {1*CELL, 7*CELL},
+    ["terminal"]        = {2*CELL, 7*CELL},
+    ["tabs"]            = {3*CELL, 7*CELL},
+    ["thinking"]        = {4*CELL, 7*CELL},
+    ["time"]            = {5*CELL, 7*CELL},
+    ["toggle-off"]      = {6*CELL, 7*CELL},
+    ["toggle-on"]       = {7*CELL, 7*CELL},
+    ["message-alt"]     = {8*CELL, 7*CELL},
+ 
     -- ROW 8
-    ["spinner"] = {0*CELL, 7*CELL}, ["success"] = {2*CELL, 7*CELL}, ["tabs"] = {3*CELL, 7*CELL}, ["plugin"] = {4*CELL, 7*CELL},
-    ["thinking"] = {5*CELL, 7*CELL}, ["time"] = {6*CELL, 7*CELL}, ["toggle-off"] = {7*CELL, 7*CELL}, ["toggle-on"] = {8*CELL, 7*CELL},
-    ["message-alt"] = {9*CELL, 7*CELL},
-
-    -- ROW 9
-    ["trash"] = {0*CELL, 8*CELL}, ["undo"] = {1*CELL, 8*CELL}, ["unlock"] = {2*CELL, 8*CELL}, ["upload"] = {3*CELL, 8*CELL},
-    ["user"] = {4*CELL, 8*CELL}, ["users"] = {5*CELL, 8*CELL}, ["variable"] = {6*CELL, 8*CELL}, ["warning"] = {7*CELL, 8*CELL},
-    ["window"] = {8*CELL, 8*CELL}, ["zap"] = {9*CELL, 8*CELL}, ["misc"] = {9*CELL, 8*CELL}
+    ["trash"]           = {0*CELL, 8*CELL},
+    ["reload"]          = {1*CELL, 8*CELL},
+    ["unlock"]          = {2*CELL, 8*CELL},
+    ["upload"]          = {3*CELL, 8*CELL},
+    ["user"]            = {4*CELL, 8*CELL},
+    ["users"]           = {5*CELL, 8*CELL},
+    ["variable"]        = {6*CELL, 8*CELL},
+    ["warning"]         = {7*CELL, 8*CELL},
+    ["zap"]             = {8*CELL, 8*CELL},
 }
-
--- Ensure unknown icons default to arrow-down instead of being invisible
-setmetatable(FALLBACK_MAP, {
-    __index = function() return {0, 0} end
+ 
+-- ── ALIASES ────────────────────────────────────────────────────────
+-- Map every old/common name to a real entry above
+local ALIASES = {
+    -- Combat / targeting
+    ["aim"]           = "crosshair",
+    ["target"]        = "crosshair",
+    ["combat"]        = "crosshair",
+    ["aimbot"]        = "crosshair",
+ 
+    -- Visuals / ESP
+    ["visuals"]       = "eye",
+    ["esp"]           = "eye",
+    ["camera"]        = "eye",
+    ["visible"]       = "eye",
+ 
+    -- Settings / config
+    ["config"]        = "settings",
+    ["setup"]         = "settings",
+    ["options"]       = "settings",
+    ["gear"]          = "settings",
+    ["wrench"]        = "settings",
+ 
+    -- Misc / utility
+    ["misc"]          = "zap",
+    ["lightning"]     = "zap",
+    ["utility"]       = "zap",
+    ["extra"]         = "zap",
+ 
+    -- Window controls
+    ["x"]             = "close",
+    ["minimize"]      = "minus",
+    ["maximize"]      = "card",
+ 
+    -- Navigation
+    ["back"]          = "arrow-back",
+    ["return"]        = "arrow-back",
+    ["left"]          = "arrow-left",
+    ["right"]         = "arrow-right",
+    ["up"]            = "arrow-up",
+ 
+    -- File operations
+    ["copy"]          = "file-alt",
+    ["paste"]         = "file",
+    ["load"]          = "upload",
+    ["export"]        = "download",
+    ["import"]        = "upload",
+    ["open"]          = "folder-open",
+ 
+    -- State / feedback
+    ["check"]         = "checkbox-on",
+    ["checked"]       = "checkbox-on",
+    ["unchecked"]     = "checkbox-off",
+    ["error"]         = "warning",
+    ["alert"]         = "warning",
+    ["ok"]            = "success",
+    ["done"]          = "success",
+ 
+    -- People / profiles
+    ["player"]        = "user",
+    ["profile"]       = "user",
+    ["account"]       = "user",
+    ["players"]       = "users",
+ 
+    -- Technical
+    ["debug"]         = "bug",
+    ["memory"]        = "brain",
+    ["fps"]           = "time",
+    ["ping"]          = "zap",
+    ["network"]       = "branch",
+    ["help"]          = "info",
+    ["shield"]        = "lock",
+    ["security"]      = "lock",
+    ["world"]         = "home",
+    ["house"]         = "home",
+    ["chip"]          = "brain",
+    ["code-alt"]      = "terminal",
+    ["plugin"]        = "tabs",
+    ["tab"]           = "tabs",
+    ["section"]       = "list",
+    ["scroll"]        = "sort",
+    ["reset"]         = "refresh",
+    ["undo"]          = "reload",
+    ["notification-bell"] = "bell",
+    ["share-alt"]     = "external-link",
+    ["slider"]        = "slider-h",
+    ["keybind"]       = "input",
+    ["key"]           = "input",
+    ["panel-alt"]     = "panel",
+    ["bookmark"]      = "star",
+    ["favourite"]     = "star-filled",
+    ["favorite"]      = "star-filled",
+}
+ 
+-- Merge aliases into map as direct entries
+for alias, target in pairs(ALIASES) do
+    if ICON_MAP[target] and not ICON_MAP[alias] then
+        ICON_MAP[alias] = ICON_MAP[target]
+    end
+end
+ 
+-- ── FALLBACK ───────────────────────────────────────────────────────
+-- Any unknown icon name falls back to arrow-left (0, 0) — always visible
+setmetatable(ICON_MAP, {
+    __index = function(_, key)
+        warn(string.format("[CLAUDE-UI] IconService: Unknown icon '%s', using fallback.", tostring(key)))
+        return {0, 0}
+    end
 })
-
--- ALIASES (Mapping old names to your new orange icons)
-FALLBACK_MAP["aim"] = FALLBACK_MAP["crosshair"]
-FALLBACK_MAP["target"] = FALLBACK_MAP["crosshair"]
-FALLBACK_MAP["visuals"] = FALLBACK_MAP["eye"]
-FALLBACK_MAP["esp"] = FALLBACK_MAP["eye"]
-FALLBACK_MAP["config"] = FALLBACK_MAP["settings"]
-FALLBACK_MAP["setup"] = FALLBACK_MAP["settings"]
-FALLBACK_MAP["misc"] = FALLBACK_MAP["zap"]
-FALLBACK_MAP["lightning"] = FALLBACK_MAP["zap"]
-
-function IconService.get(name)
-    local coords = FALLBACK_MAP[name] or {0, 0}
+ 
+-- ── PUBLIC API ─────────────────────────────────────────────────────
+ 
+--[[
+    IconService.get(name, displaySize?)
+    Returns a pre-configured ImageLabel ready to parent.
     
+    @param name        string  — icon name from ICON_MAP
+    @param displaySize number  — pixel size to display at (default 20)
+    @return ImageLabel
+]]
+function IconService.get(name, displaySize)
+    local coords = ICON_MAP[name]   -- always returns something due to __index fallback
+    local size   = displaySize or 20
+ 
     local img = Instance.new("ImageLabel")
-    img.Name = "CUI_Icon_" .. tostring(name)
-    img.Size = UDim2.fromOffset(20, 20) -- Icon display size
+    img.Name                = "CUI_Icon"
+    img.Size                = UDim2.fromOffset(size, size)
     img.BackgroundTransparency = 1
-    img.Image = "rbxassetid://97757682409962"
-    
-    -- This MUST match your test script's working size
-    img.ImageRectSize = Vector2.new(CELL, CELL) 
-    img.ImageRectOffset = Vector2.new(coords[1], coords[2])
-    
-    img.ImageColor3 = Color3.new(1, 1, 1) -- Keep white to show your orange colors
-    img.ZIndex = 20
-    
+    img.Image               = ASSET_ID
+    img.ImageRectSize       = Vector2.new(CELL, CELL)
+    img.ImageRectOffset     = Vector2.new(coords[1], coords[2])
+    img.ImageColor3         = Color3.new(1, 1, 1)   -- sheet is already orange; keep white
+    img.ScaleType           = Enum.ScaleType.Stretch
+    img.ZIndex              = 20
+ 
     return img
 end
-
-function IconService.setTheme() end -- Theme is baked into the sheet
+ 
+--[[
+    IconService.apply(imageLabel, name)
+    Updates an existing ImageLabel to show a different icon.
+    Useful for state changes (e.g. toggle-off → toggle-on)
+    
+    @param imageLabel  ImageLabel
+    @param name        string
+]]
+function IconService.apply(imageLabel, name)
+    local coords = ICON_MAP[name]
+    imageLabel.Image           = ASSET_ID
+    imageLabel.ImageRectSize   = Vector2.new(CELL, CELL)
+    imageLabel.ImageRectOffset = Vector2.new(coords[1], coords[2])
+end
+ 
+--[[
+    IconService.list()
+    Prints all available icon names to the console.
+    Useful for developers building tabs.
+]]
+function IconService.list()
+    local names = {}
+    for k in pairs(ICON_MAP) do
+        -- Skip metatable-resolved entries that aren't real keys
+        table.insert(names, k)
+    end
+    table.sort(names)
+    warn("[CLAUDE-UI] Available icons (" .. #names .. "):")
+    for _, name in ipairs(names) do
+        local c = rawget(ICON_MAP, name)
+        if c then
+            warn(string.format("  %-22s → col %d, row %d  (offset %d, %d)",
+                name,
+                c[1] / CELL,
+                c[2] / CELL,
+                c[1], c[2]
+            ))
+        end
+    end
+end
+ 
+--[[
+    IconService.setTheme()
+    Stub — sheet is already orange, no swap needed.
+    Kept for API compatibility.
+]]
+function IconService.setTheme() end
 
 -- ─────────────────────────────────────────────────────────────────
 -- 7. LAYOUT MANAGER
@@ -2027,7 +2268,6 @@ function Library:Help(filter)
         {"History.undo()",                     "Revert last state change (Ctrl+Z)"},
         {"History.redo()",                     "Re-apply undone change (Ctrl+Y)"},
         {"IconService.get(name, theme?)",      "Get ImageLabel from spritesheet"},
-        {"IconService.setTheme(theme)",        "Swap spritesheet theme (orange/white)"},
         {"PluginSystem.register(plugin)",      "Register a custom tab plugin"},
         {"PluginSystem.loadAll()",             "Execute all registered plugins"},
         {"BreadcrumbBar.push(tab, section?)", "Manually update breadcrumb path"},
